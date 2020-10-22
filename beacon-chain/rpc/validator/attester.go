@@ -166,6 +166,10 @@ func (vs *Server) ProposeAttestation(ctx context.Context, att *ethpb.Attestation
 	}
 	subnet := helpers.ComputeSubnetFromCommitteeAndSlot(uint64(len(vals)), att.Data.CommitteeIndex, att.Data.Slot)
 
+	fmt.Println("------ProposeAttestation LOG START-------")
+	fmt.Println(att.Data.Slot, subnet)
+	fmt.Println("------ProposeAttestation LOG END-------")
+
 	// Broadcast the new attestation to the network.
 	if err := vs.P2P.BroadcastAttestation(ctx, subnet, att); err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not broadcast attestation: %v", err)
@@ -224,6 +228,11 @@ func (vs *Server) SubscribeCommitteeSubnets(ctx context.Context, req *ethpb.Comm
 			currEpoch = helpers.SlotToEpoch(req.Slots[i])
 		}
 		subnet := helpers.ComputeSubnetFromCommitteeAndSlot(currValsLen, req.CommitteeIds[i], req.Slots[i])
+
+		fmt.Println("------SubscribeCommitteeSubnets LOG START-------")
+		fmt.Println(req.Slots[i], subnet)
+		fmt.Println("------SubscribeCommitteeSubnets LOG END-------")
+
 		cache.SubnetIDs.AddAttesterSubnetID(req.Slots[i], subnet)
 		if req.IsAggregator[i] {
 			cache.SubnetIDs.AddAggregatorSubnetID(req.Slots[i], subnet)

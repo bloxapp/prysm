@@ -113,7 +113,7 @@ spec:
   selector:
     application: ethereum2-prysm
 ---
-apiVersion: apps/v1
+apiVersion: REPLACE_API_VERSION
 kind: StatefulSet
 metadata:
   namespace: REPLACE_NAMESPACE

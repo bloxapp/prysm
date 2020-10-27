@@ -1,6 +1,5 @@
 FROM ubuntu:20.10
 
-RUN  python --version
 RUN  apt-get update && apt-get install -y curl wget telnet net-tools git gnupg procps
 RUN  curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor > bazel.gpg
 RUN  mv bazel.gpg /etc/apt/trusted.gpg.d/

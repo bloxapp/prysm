@@ -153,7 +153,6 @@ spec:
       - name: ethereum2-prysm
         image: REPLACE_DOCKER_REPO:REPLACE_IMAGETAG
         imagePullPolicy: Always
-        args: [bash, -c, sleep infinity]
         ports:
         - containerPort: 3500
           name: ext-3500

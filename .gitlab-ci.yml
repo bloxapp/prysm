@@ -1,6 +1,6 @@
 stages:
   - build
-# - deploy
+  - deploy
 
 variables:
 
@@ -29,16 +29,16 @@ Build stage Docker image:
   only:
     - master
 
-#Deploy to blox-infra-stage cluster:
-#  stage: deploy
-#  tags:
-#    - blox-infra-stage
-#  script:
-#    - apk add bash
-#    - curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl
-#    - chmod +x ./kubectl
-#    - mv ./kubectl /usr/bin/kubectl
-#    - export K8S_API_VERSION=$INFRA_STAGE_K8_API_VERSION
-#    - .k8/scripts/deploy-yamls-on-k8s.sh $DOCKER_REPO_INFRA_STAGE $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_STAGE blox-infra-stage kubernetes-admin@blox-infra stage.bloxinfra.com $K8S_API_VERSION
-#  only:
-#    - master
+Deploy to blox-infra-stage cluster:
+  stage: deploy
+  tags:
+    - blox-infra-stage
+  script:
+    - apk add bash
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl
+    - chmod +x ./kubectl
+    - mv ./kubectl /usr/bin/kubectl
+    - export K8S_API_VERSION=$INFRA_STAGE_K8_API_VERSION
+    - .k8/scripts/deploy-yamls-on-k8s.sh $DOCKER_REPO_INFRA_STAGE $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_STAGE blox-infra-stage kubernetes-admin@blox-infra stage.bloxinfra.com $K8S_API_VERSION
+  only:
+    - master

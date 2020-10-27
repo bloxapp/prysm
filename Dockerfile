@@ -7,8 +7,8 @@ RUN  echo "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1
 RUN  apt update && apt install -y bazel && apt update && apt install -y bazel-3.2.0
 RUN  mkdir /data
 RUN  git clone https://github.com/bloxapp/prysm.git
-RUN  cd /prysm && cp entrypoint.sh / && bazel build //beacon-chain:beacon-chain
+RUN  cd /prysm && bazel build //beacon-chain:beacon-chain
 
 EXPOSE 3500 4000 6668 13000
 
-CMD ["bash", "/entrypoint.sh"]
+CMD ["bash", "/prysm/entrypoint.sh"]

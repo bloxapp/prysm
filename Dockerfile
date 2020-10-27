@@ -1,4 +1,4 @@
-FROM ubuntu:20.10
+FROM 121827225315.dkr.ecr.us-west-2.amazonaws.com/infra-stage-repo:ubuntu20-prysm
 
 RUN  apt-get update && apt-get install -y curl wget telnet net-tools git gnupg procps
 RUN  curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor > bazel.gpg

@@ -12,7 +12,7 @@ spec:
   http:
   - route:
     - destination:
-        host: ethereum2--prysm
+        host: ethereum2-prysm
         port:
           number: 3500
 ---

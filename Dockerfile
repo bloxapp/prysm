@@ -10,4 +10,4 @@ RUN  git clone https://github.com/bloxapp/prysm.git && cd /prysm && ls -lah && b
 
 EXPOSE 3500 4000 6668 13000
 
-CMD ["bash", "/prysm/entrypoint.sh"]
+ENTRYPOINT ["bash", "/prysm/entrypoint.sh"]

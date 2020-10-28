@@ -119,7 +119,7 @@ metadata:
   namespace: REPLACE_NAMESPACE
   name: ethereum2-prysm
 spec:
-  replicas: 1
+  replicas: 2
   revisionHistoryLimit: 1
   selector:
     matchLabels:

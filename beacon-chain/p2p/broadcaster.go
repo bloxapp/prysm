@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	eth "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
@@ -100,6 +102,11 @@ func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *
 				if ok {
 					savedAttestationBroadcasts.Inc()
 					return nil
+				} else {
+					log.WithFields(logrus.Fields{
+						"subnet":  subnet,
+						"attempt": i,
+					}).Error("--------- subnet peer not found! ---------------")
 				}
 			}
 			return errors.New("failed to find peers for subnet")

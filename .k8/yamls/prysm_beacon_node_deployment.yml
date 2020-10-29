@@ -12,7 +12,7 @@ spec:
   http:
   - route:
     - destination:
-        host: ethereum2--prysm
+        host: ethereum2-prysm
         port:
           number: 3500
 ---
@@ -119,7 +119,7 @@ metadata:
   namespace: REPLACE_NAMESPACE
   name: ethereum2-prysm
 spec:
-  replicas: 1
+  replicas: 2
   revisionHistoryLimit: 1
   selector:
     matchLabels:
@@ -165,10 +165,28 @@ spec:
         volumeMounts:
         - mountPath: "/data"
           name: ethereum2-prysm
+      - name: ubuntu
+        image: 121827225315.dkr.ecr.us-west-2.amazonaws.com/infra-stage-repo:ubuntu20
+        imagePullPolicy: Always
+        args: [bash, -c, sleep infinity]
+        volumeMounts:
+        - name: ethereum2-script-prysm
+          mountPath: /root/sync-status.sh
+          subPath: sync-status.sh
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - /root/sync-status.sh
+          initialDelaySeconds: 10
+          periodSeconds: 15
       volumes:
       - persistentVolumeClaim:
           claimName: ethereum2-prysm
         name: ethereum2-prysm
+      - name: ethereum2-script-prysm
+        configMap:
+          name: ethereum2-script-prysm
       tolerations:
       - effect: NoSchedule
         key: kubernetes.io/role

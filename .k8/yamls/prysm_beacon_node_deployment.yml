@@ -112,6 +112,10 @@ spec:
       name: ext-13000
   selector:
     application: ethereum2-prysm
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
 ---
 apiVersion: REPLACE_API_VERSION
 kind: StatefulSet
@@ -119,7 +123,7 @@ metadata:
   namespace: REPLACE_NAMESPACE
   name: ethereum2-prysm
 spec:
-  replicas: 2
+  replicas: 5
   revisionHistoryLimit: 1
   selector:
     matchLabels:

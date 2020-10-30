@@ -86,9 +86,15 @@ func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *
 		trace.Int64Attribute("subnet", int64(subnet)),
 	)
 
-	log := log.WithField("slot", att.Data.Slot)
+	log := log.WithFields(logrus.Fields{
+		"slot":       att.Data.Slot,
+		"subnet":     subnet,
+		"forkDigest": forkDigest,
+	})
+	log.Info("--------- broadcastAttestation start --------------")
 
 	if !hasPeer {
+		log.Info("--------------- INITIAL PEER NOT FOUND ----------------")
 		attestationBroadcastAttempts.Inc()
 		if err := func() error {
 			s.subnetLocker(subnet).Lock()
@@ -99,6 +105,7 @@ func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *
 				}
 				ok, err := s.FindPeersWithSubnet(ctx, subnet)
 				if err != nil {
+					log.WithError(err).Error("------- FAILED TO FIND PEERS WITH SUBNET ---------------")
 					return err
 				}
 				if ok {
@@ -118,8 +125,9 @@ func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *
 		}
 	}
 
+	log.WithField("topic", attestationToTopic(subnet, forkDigest)).Info("---------- BROADCAST TOPIC --------------")
 	if err := s.broadcastObject(ctx, att, attestationToTopic(subnet, forkDigest)); err != nil {
-		log.WithError(err).Error("Failed to broadcast attestation")
+		log.WithError(err).Error("------------ FAILED TO BROADCAST ATTESTATION --------------")
 		traceutil.AnnotateError(span, err)
 	}
 }

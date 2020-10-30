@@ -44,15 +44,21 @@ func (s *Service) LeaveTopic(topic string) error {
 
 // PublishToTopic joins (if necessary) and publishes a message to a PubSub topic.
 func (s *Service) PublishToTopic(ctx context.Context, topic string, data []byte, opts ...pubsub.PubOpt) error {
+	log.WithField("topic", topic).Info("--------- PublishToTopic START -------------")
+
 	topicHandle, err := s.JoinTopic(topic)
 	if err != nil {
 		return err
 	}
 
+	log.WithField("topic", topic).Info("--------- JOINED TOPIC -------------")
+
 	// Wait for at least 1 peer to be available to receive the published message.
 	for {
 		if len(topicHandle.ListPeers()) > 0 {
 			return topicHandle.Publish(ctx, data, opts...)
+		} else {
+			log.WithField("topic", topic).Error("--------- NO PEERS FOUND -------------")
 		}
 		select {
 		case <-ctx.Done():

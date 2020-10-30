@@ -86,6 +86,8 @@ func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *
 		trace.Int64Attribute("subnet", int64(subnet)),
 	)
 
+	log := log.WithField("slot", att.Data.Slot)
+
 	if !hasPeer {
 		attestationBroadcastAttempts.Inc()
 		if err := func() error {

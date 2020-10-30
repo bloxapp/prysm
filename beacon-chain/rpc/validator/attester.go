@@ -168,10 +168,12 @@ func (vs *Server) ProposeAttestation(ctx context.Context, att *ethpb.Attestation
 	}
 	subnet := helpers.ComputeSubnetFromCommitteeAndSlot(uint64(len(vals)), att.Data.CommitteeIndex, att.Data.Slot)
 
-	log.WithFields(logrus.Fields{
+	log := log.WithFields(logrus.Fields{
 		"slot":   att.Data.Slot,
 		"subnet": subnet,
-	}).Info("------ProposeAttestation LOG START-------")
+	})
+
+	log.Info("------ProposeAttestation LOG START-------")
 
 	// Broadcast the new attestation to the network.
 	if err := vs.P2P.BroadcastAttestation(ctx, subnet, att); err != nil {

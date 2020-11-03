@@ -130,6 +130,7 @@ func (s *Service) broadcastAttestation(_ context.Context, subnet uint64, att *et
 		log.WithError(err).Error("------------ FAILED TO BROADCAST ATTESTATION --------------")
 		traceutil.AnnotateError(span, err)
 	}
+	log.Info("------------ BROADCASTED ATTESTATION!!! --------------")
 }
 
 // method to broadcast messages to other peers in our gossip mesh.

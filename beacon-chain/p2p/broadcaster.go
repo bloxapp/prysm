@@ -66,8 +66,8 @@ func (s *Service) BroadcastAttestation(ctx context.Context, subnet uint64, att *
 	return nil
 }
 
-func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *eth.Attestation, forkDigest [4]byte) {
-	ctx, span := trace.StartSpan(ctx, "p2p.broadcastAttestation")
+func (s *Service) broadcastAttestation(_ context.Context, subnet uint64, att *eth.Attestation, forkDigest [4]byte) {
+	ctx, span := trace.StartSpan(context.Background(), "p2p.broadcastAttestation")
 	defer span.End()
 	ctx = trace.NewContext(context.Background(), span) // clear parent context / deadline.
 

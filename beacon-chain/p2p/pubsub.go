@@ -56,6 +56,7 @@ func (s *Service) PublishToTopic(ctx context.Context, topic string, data []byte,
 	// Wait for at least 1 peer to be available to receive the published message.
 	for {
 		if len(topicHandle.ListPeers()) > 0 {
+			log.WithField("topic", topic).Error("--------- PEERS FOUND!!! -------------")
 			return topicHandle.Publish(ctx, data, opts...)
 		} else {
 			log.WithField("topic", topic).Error("--------- NO PEERS FOUND -------------")

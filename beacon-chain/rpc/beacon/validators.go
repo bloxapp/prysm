@@ -469,8 +469,7 @@ func (bs *Server) GetValidatorActiveSetChanges(
 func (bs *Server) GetValidatorParticipation(
 	ctx context.Context, req *ethpb.GetValidatorParticipationRequest,
 ) (*ethpb.ValidatorParticipationResponse, error) {
-	currentSlot := helpers.SlotToEpoch(bs.GenesisTimeFetcher.CurrentSlot())
-	currentEpoch := helpers.SlotToEpoch(currentSlot)
+	currentEpoch := helpers.SlotToEpoch(bs.GenesisTimeFetcher.CurrentSlot())
 
 	var requestedEpoch uint64
 	switch q := req.QueryFilter.(type) {
@@ -479,66 +478,62 @@ func (bs *Server) GetValidatorParticipation(
 	case *ethpb.GetValidatorParticipationRequest_Epoch:
 		requestedEpoch = q.Epoch
 	default:
-		requestedEpoch = currentEpoch
+		// Prevent underflow and ensure participation is always queried for previous epoch.
+		if currentEpoch > 1 {
+			requestedEpoch = currentEpoch - 1
+		}
 	}
 
-	if requestedEpoch > currentEpoch {
+	if requestedEpoch >= currentEpoch {
 		return nil, status.Errorf(
 			codes.InvalidArgument,
-			"Cannot retrieve information about an epoch greater than current epoch, current epoch %d, requesting %d",
+			"Cannot retrieve information about an epoch until older than current epoch, current epoch %d, requesting %d",
 			currentEpoch,
 			requestedEpoch,
 		)
 	}
-
-	// Get current slot state for current epoch attestations.
-	state, err := bs.StateGen.StateBySlot(ctx, currentSlot)
+	// Calculate the end slot of the next epoch.
+	// Ex: requested epoch 1, this gets slot 95.
+	nextEpochEndSlot, err := helpers.StartSlot(requestedEpoch + 2)
+	if err != nil {
+		return nil, err
+	}
+	nextEpochEndSlot--
+	requestedState, err := bs.StateGen.StateBySlot(ctx, nextEpochEndSlot)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not get state: %v", err)
 	}
-	v, b, err := precompute.New(ctx, state)
+
+	v, b, err := precompute.New(ctx, requestedState)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not set up pre compute instance: %v", err)
 	}
-	_, b, err = precompute.ProcessAttestations(ctx, state, v, b)
+	_, b, err = precompute.ProcessAttestations(ctx, requestedState, v, b)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not pre compute attestations: %v", err)
 	}
+	headState, err := bs.HeadFetcher.HeadState(ctx)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Could not get head state: %v", err)
+	}
 
-	p := &ethpb.ValidatorParticipationResponse{
+	return &ethpb.ValidatorParticipationResponse{
 		Epoch:     requestedEpoch,
-		Finalized: requestedEpoch <= state.FinalizedCheckpointEpoch(),
+		Finalized: requestedEpoch <= headState.FinalizedCheckpointEpoch(),
 		Participation: &ethpb.ValidatorParticipation{
 			// TODO(7130): Remove these three deprecated fields.
-			CurrentEpochActiveGwei:          b.ActiveCurrentEpoch,
-			CurrentEpochAttestingGwei:       b.CurrentEpochAttested,
-			CurrentEpochTargetAttestingGwei: b.CurrentEpochTargetAttested,
+			GlobalParticipationRate:          float32(b.PrevEpochTargetAttested) / float32(b.ActivePrevEpoch),
+			VotedEther:                       b.PrevEpochTargetAttested,
+			EligibleEther:                    b.ActivePrevEpoch,
+			CurrentEpochActiveGwei:           b.ActiveCurrentEpoch,
+			CurrentEpochAttestingGwei:        b.CurrentEpochAttested,
+			CurrentEpochTargetAttestingGwei:  b.CurrentEpochTargetAttested,
+			PreviousEpochActiveGwei:          b.ActivePrevEpoch,
+			PreviousEpochAttestingGwei:       b.PrevEpochAttested,
+			PreviousEpochTargetAttestingGwei: b.PrevEpochTargetAttested,
+			PreviousEpochHeadAttestingGwei:   b.PrevEpochHeadAttested,
 		},
-	}
-
-	// Get head state for previous epoch attestations.
-	state, err = bs.HeadFetcher.HeadState(ctx)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not get state: %v", err)
-	}
-	v, b, err = precompute.New(ctx, state)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not set up pre compute instance: %v", err)
-	}
-	_, b, err = precompute.ProcessAttestations(ctx, state, v, b)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not pre compute attestations: %v", err)
-	}
-
-	p.Participation.GlobalParticipationRate = float32(b.PrevEpochTargetAttested) / float32(b.ActivePrevEpoch)
-	p.Participation.VotedEther = b.PrevEpochTargetAttested
-	p.Participation.EligibleEther = b.ActivePrevEpoch
-	p.Participation.PreviousEpochActiveGwei = b.ActivePrevEpoch
-	p.Participation.PreviousEpochAttestingGwei = b.PrevEpochAttested
-	p.Participation.PreviousEpochTargetAttestingGwei = b.PrevEpochTargetAttested
-	p.Participation.PreviousEpochHeadAttestingGwei = b.PrevEpochHeadAttested
-
-	return p, nil
+	}, nil
 }
 
 // GetValidatorQueue retrieves the current validator queue information.

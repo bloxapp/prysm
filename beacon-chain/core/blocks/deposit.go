@@ -33,10 +33,8 @@ func ProcessPreGenesisDeposits(
 	for _, deposit := range deposits {
 		pubkey := deposit.Data.PublicKey
 		index, ok := beaconState.ValidatorIndexByPubkey(bytesutil.ToBytes48(pubkey))
-		// In the event of the pubkey not existing, we continue processing the other
-		// deposits.
 		if !ok {
-			continue
+			return beaconState, nil
 		}
 		balance, err := beaconState.BalanceAtIndex(index)
 		if err != nil {

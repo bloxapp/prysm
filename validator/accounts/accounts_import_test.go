@@ -20,6 +20,7 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/testutil/assert"
 	"github.com/prysmaticlabs/prysm/shared/testutil/require"
 	"github.com/prysmaticlabs/prysm/shared/timeutils"
+	"github.com/prysmaticlabs/prysm/validator/accounts/iface"
 	"github.com/prysmaticlabs/prysm/validator/accounts/wallet"
 	"github.com/prysmaticlabs/prysm/validator/keymanager"
 	"github.com/prysmaticlabs/prysm/validator/keymanager/imported"
@@ -79,7 +80,9 @@ func TestImport_Noninteractive(t *testing.T) {
 		WalletPassword: password,
 	})
 	require.NoError(t, err)
-	km, err := w.InitializeKeymanager(cliCtx.Context, true)
+	km, err := w.InitializeKeymanager(cliCtx.Context, &iface.InitializeKeymanagerConfig{
+		SkipMnemonicConfirm: true,
+	})
 	require.NoError(t, err)
 	keys, err := km.FetchValidatingPublicKeys(cliCtx.Context)
 	require.NoError(t, err)
@@ -140,7 +143,9 @@ func TestImport_Noninteractive_RandomName(t *testing.T) {
 		WalletPassword: password,
 	})
 	require.NoError(t, err)
-	km, err := w.InitializeKeymanager(cliCtx.Context, true)
+	km, err := w.InitializeKeymanager(cliCtx.Context, &iface.InitializeKeymanagerConfig{
+		SkipMnemonicConfirm: true,
+	})
 	require.NoError(t, err)
 	keys, err := km.FetchValidatingPublicKeys(cliCtx.Context)
 	require.NoError(t, err)
@@ -197,7 +202,9 @@ func TestImport_Noninteractive_Filepath(t *testing.T) {
 		WalletPassword: password,
 	})
 	require.NoError(t, err)
-	km, err := w.InitializeKeymanager(cliCtx.Context, true)
+	km, err := w.InitializeKeymanager(cliCtx.Context, &iface.InitializeKeymanagerConfig{
+		SkipMnemonicConfirm: true,
+	})
 	require.NoError(t, err)
 	keys, err := km.FetchValidatingPublicKeys(cliCtx.Context)
 	require.NoError(t, err)
@@ -279,7 +286,8 @@ func Test_importPrivateKeyAsAccount(t *testing.T) {
 	privKeyFileName := filepath.Join(privKeyDir, "privatekey.txt")
 
 	// We create a new private key and save it to a file on disk.
-	privKey := bls.RandKey()
+	privKey, err := bls.RandKey()
+	require.NoError(t, err)
 	privKeyHex := fmt.Sprintf("%x", privKey.Marshal())
 	require.NoError(
 		t,
@@ -329,7 +337,8 @@ func Test_importPrivateKeyAsAccount(t *testing.T) {
 
 // Returns the fullPath to the newly created keystore file.
 func createKeystore(t *testing.T, path string) (*keymanager.Keystore, string) {
-	validatingKey := bls.RandKey()
+	validatingKey, err := bls.RandKey()
+	require.NoError(t, err)
 	encryptor := keystorev4.New()
 	cryptoFields, err := encryptor.Encrypt(validatingKey.Marshal(), password)
 	require.NoError(t, err)
@@ -353,7 +362,8 @@ func createKeystore(t *testing.T, path string) (*keymanager.Keystore, string) {
 
 // Returns the fullPath to the newly created keystore file.
 func createRandomNameKeystore(t *testing.T, path string) (*keymanager.Keystore, string) {
-	validatingKey := bls.RandKey()
+	validatingKey, err := bls.RandKey()
+	require.NoError(t, err)
 	encryptor := keystorev4.New()
 	cryptoFields, err := encryptor.Encrypt(validatingKey.Marshal(), password)
 	require.NoError(t, err)

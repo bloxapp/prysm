@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/golang/snappy"
@@ -48,7 +49,7 @@ func (s *Service) PublishToTopic(ctx context.Context, topic string, data []byte,
 
 	topicHandle, err := s.JoinTopic(topic)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to join topic: %s", err)
 	}
 
 	log.WithField("topic", topic).Info("--------- JOINED TOPIC -------------")
@@ -57,12 +58,16 @@ func (s *Service) PublishToTopic(ctx context.Context, topic string, data []byte,
 	for {
 		if len(topicHandle.ListPeers()) > 0 {
 			log.WithField("topic", topic).Error("--------- PEERS FOUND!!! -------------")
-			return topicHandle.Publish(ctx, data, opts...)
+			if err := topicHandle.Publish(ctx, data, opts...); err != nil {
+				return fmt.Errorf("failed to publish data into topic: %s", err)
+			}
+			return nil
 		} else {
 			log.WithField("topic", topic).Error("--------- NO PEERS FOUND -------------")
 		}
 		select {
 		case <-ctx.Done():
+			log.WithField("ctx.Err()", ctx.Err()).Error("--------- CONTEXT IS DONE -------------")
 			return ctx.Err()
 		default:
 			time.Sleep(100 * time.Millisecond)

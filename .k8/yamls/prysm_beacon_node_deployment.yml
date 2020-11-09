@@ -45,7 +45,7 @@ spec:
   http:
   - route:
     - destination:
-        host: ethereum2-grpc-prysm
+        host: ethereum2-grpc
         port:
           number: 4000
 ---
@@ -61,31 +61,25 @@ spec:
   - port:
       number: 80
       name: http
-      protocol: GRPC
+      protocol: HTTP
     hosts:
     - "eth2-4000-prysm.REPLACE_DOMAIN_SUFFIX"
 ---
-apiVersion: v1
-kind: Service
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
 metadata:
-  name: ethereum2-grpc-prysm
-  namespace: REPLACE_NAMESPACE
   labels:
     application: ethereum2-prysm
+    run: ethereum2-prysm
     version: v1
+  name: ethereum2-prysm
+  namespace: blockchain
 spec:
-  type: ClusterIP
-  ports:
-    - port: 4000
-      protocol: TCP
-      targetPort: 4000
-      name: grpc
-  selector:
-    application: ethereum2-prysm
-  sessionAffinity: ClientIP
-  sessionAffinityConfig:
-    clientIP:
-      timeoutSeconds: 10800
+  host: ethereum2-prysm
+  trafficPolicy:
+    loadBalancer:
+      consistentHash:
+        httpHeaderName: x-public-key
 ---
 apiVersion: v1
 kind: Service

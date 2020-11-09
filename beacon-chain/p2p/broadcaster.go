@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"time"
 
+	"google.golang.org/grpc/metadata"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/gogo/protobuf/proto"
@@ -86,12 +88,14 @@ func (s *Service) broadcastAttestation(_ context.Context, subnet uint64, att *et
 		trace.Int64Attribute("subnet", int64(subnet)),
 	)
 
+	md, _ := metadata.FromIncomingContext(ctx)
 	log := log.WithFields(logrus.Fields{
-		"slot":       att.Data.Slot,
-		"subnet":     subnet,
-		"forkDigest": forkDigest,
+		"slot":        att.Data.Slot,
+		"subnet":      subnet,
+		"forkDigest":  forkDigest,
+		"request_key": md["x-request-key"],
 	})
-	log.Info("--------- broadcastAttestation start --------------")
+	log.Info("--------- broadcastAttestation START --------------")
 
 	if !hasPeer {
 		log.Info("--------------- INITIAL PEER NOT FOUND ----------------")
@@ -109,13 +113,17 @@ func (s *Service) broadcastAttestation(_ context.Context, subnet uint64, att *et
 					return err
 				}
 				if ok {
+					log.WithFields(logrus.Fields{
+						"subnet":  subnet,
+						"attempt": i,
+					}).Error("--------- PEER FOUND! ---------------")
 					savedAttestationBroadcasts.Inc()
 					return nil
 				} else {
 					log.WithFields(logrus.Fields{
 						"subnet":  subnet,
 						"attempt": i,
-					}).Error("--------- subnet peer not found! ---------------")
+					}).Error("--------- SUBNET PEER NOT FOUND! ---------------")
 				}
 			}
 			return errors.New("failed to find peers for subnet")

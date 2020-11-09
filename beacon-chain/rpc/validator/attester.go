@@ -179,6 +179,7 @@ func (vs *Server) ProposeAttestation(ctx context.Context, att *ethpb.Attestation
 		"slot":         att.Data.Slot,
 		"subnet":       subnet,
 		"x-public-key": md["x-public-key"],
+		"request_key":  md["x-request-key"],
 	})
 
 	log.Info("------ProposeAttestation LOG START-------")
@@ -252,6 +253,7 @@ func (vs *Server) SubscribeCommitteeSubnets(ctx context.Context, req *ethpb.Comm
 			"slot":         req.Slots[i],
 			"subnet":       subnet,
 			"x-public-key": md["x-public-key"],
+			"request_key":  md["x-request-key"],
 		}).Info("------SubscribeCommitteeSubnets LOG START-------")
 
 		cache.SubnetIDs.AddAttesterSubnetID(req.Slots[i], subnet)

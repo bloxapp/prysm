@@ -185,7 +185,7 @@ func (vs *Server) ProposeAttestation(ctx context.Context, att *ethpb.Attestation
 	log.Info("------ProposeAttestation LOG START-------")
 
 	// Broadcast the new attestation to the network.
-	if err := vs.P2P.BroadcastAttestation(ctx, subnet, att); err != nil {
+	if err := vs.P2P.BroadcastAttestation(context.WithValue(ctx, "x-request-key", md["x-request-key"]), subnet, att); err != nil {
 		log.WithError(err).Error("Could not broadcast attestation")
 		return nil, status.Errorf(codes.Internal, "Could not broadcast attestation: %v", err)
 	}

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"google.golang.org/grpc/metadata"
-
 	"github.com/golang/snappy"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	pubsub_pb "github.com/libp2p/go-libp2p-pubsub/pb"
@@ -47,8 +45,8 @@ func (s *Service) LeaveTopic(topic string) error {
 
 // PublishToTopic joins (if necessary) and publishes a message to a PubSub topic.
 func (s *Service) PublishToTopic(ctx context.Context, topic string, data []byte, opts ...pubsub.PubOpt) error {
-	md, _ := metadata.FromIncomingContext(ctx)
-	log := log.WithField("request_key", md["x-request-key"])
+	requestKey := ctx.Value("x-request-key")
+	log := log.WithField("request_key", requestKey)
 
 	log.WithField("topic", topic).Info("--------- PublishToTopic START -------------")
 

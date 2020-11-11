@@ -7,8 +7,6 @@ import (
 	"reflect"
 	"time"
 
-	"google.golang.org/grpc/metadata"
-
 	"github.com/sirupsen/logrus"
 
 	"github.com/gogo/protobuf/proto"
@@ -53,7 +51,7 @@ func (s *Service) Broadcast(ctx context.Context, msg proto.Message) error {
 
 // BroadcastAttestation broadcasts an attestation to the p2p network.
 func (s *Service) BroadcastAttestation(ctx context.Context, subnet uint64, att *eth.Attestation) error {
-	ctx, span := trace.StartSpan(ctx, "p2p.BroadcastAttestation")
+	_, span := trace.StartSpan(ctx, "p2p.BroadcastAttestation")
 	defer span.End()
 	forkDigest, err := s.forkDigest()
 	if err != nil {
@@ -68,7 +66,8 @@ func (s *Service) BroadcastAttestation(ctx context.Context, subnet uint64, att *
 	return nil
 }
 
-func (s *Service) broadcastAttestation(_ context.Context, subnet uint64, att *eth.Attestation, forkDigest [4]byte) {
+func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *eth.Attestation, forkDigest [4]byte) {
+	requestKey := ctx.Value("x-request-key")
 	ctx, span := trace.StartSpan(context.Background(), "p2p.broadcastAttestation")
 	defer span.End()
 	ctx = trace.NewContext(context.Background(), span) // clear parent context / deadline.
@@ -88,12 +87,11 @@ func (s *Service) broadcastAttestation(_ context.Context, subnet uint64, att *et
 		trace.Int64Attribute("subnet", int64(subnet)),
 	)
 
-	md, _ := metadata.FromIncomingContext(ctx)
 	log := log.WithFields(logrus.Fields{
 		"slot":        att.Data.Slot,
 		"subnet":      subnet,
 		"forkDigest":  forkDigest,
-		"request_key": md["x-request-key"],
+		"request_key": requestKey,
 	})
 	log.Info("--------- broadcastAttestation START --------------")
 
@@ -134,7 +132,7 @@ func (s *Service) broadcastAttestation(_ context.Context, subnet uint64, att *et
 	}
 
 	log.WithField("topic", attestationToTopic(subnet, forkDigest)).Info("---------- BROADCAST TOPIC --------------")
-	if err := s.broadcastObject(ctx, att, attestationToTopic(subnet, forkDigest)); err != nil {
+	if err := s.broadcastObject(context.WithValue(ctx, "x-request-key", requestKey), att, attestationToTopic(subnet, forkDigest)); err != nil {
 		log.WithError(err).Error("------------ FAILED TO BROADCAST ATTESTATION --------------")
 		traceutil.AnnotateError(span, err)
 	}

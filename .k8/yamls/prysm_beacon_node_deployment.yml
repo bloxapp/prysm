@@ -45,7 +45,7 @@ spec:
   http:
   - route:
     - destination:
-        host: ethereum2-grpc
+        host: ethereum2-prysm-grpc
         port:
           number: 4000
 ---
@@ -80,6 +80,27 @@ spec:
     loadBalancer:
       consistentHash:
         httpHeaderName: x-public-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ethereum2-prysm-grpc
+  namespace: blockchain
+  labels:
+    application: ethereum2-prysm
+    version: v1
+spec:
+  selector:
+    application: ethereum2-prysm
+  type: ClusterIP
+  ports:
+  - name: grpc
+    protocol: TCP
+    port: 4000
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
 ---
 apiVersion: v1
 kind: Service

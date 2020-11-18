@@ -1,4 +1,140 @@
 ---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ethereum2-3500-prysm-test
+  namespace: test
+spec:
+  hosts:
+  - "eth2-3500-prysm-test.stage.bloxinfra.com"
+  gateways:
+  - ethereum2-3500-prysm-test
+  http:
+  - route:
+    - destination:
+        host: ethereum2-prysm-test
+        port:
+          number: 3500
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: ethereum2-3500-prysm-test
+  namespace: test
+spec:
+  selector:
+    istio: ingressgateway-int
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "eth2-3500-prysm-test.stage.bloxinfra.com"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ethereum2-4000-prysm-test
+  namespace: test
+spec:
+  hosts:
+  - "eth2-4000-prysm-test.stage.bloxinfra.com"
+  gateways:
+  - ethereum2-4000-prysm-test
+  http:
+  - route:
+    - destination:
+        host: ethereum2-prysm-grpc-test
+        port:
+          number: 4000
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: ethereum2-4000-prysm-test
+  namespace: test
+spec:
+  selector:
+    istio: ingressgateway-int
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "eth2-4000-prysm-test.stage.bloxinfra.com"
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  labels:
+    application: ethereum2-prysm-test
+    run: ethereum2-prysm-test
+    version: v1
+  name: ethereum2-prysm-test
+  namespace: test
+spec:
+  host: ethereum2-prysm-test
+  trafficPolicy:
+    loadBalancer:
+      consistentHash:
+        httpHeaderName: x-public-key
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ethereum2-prysm-ext-test
+  namespace: test
+spec:
+  hosts:
+  - "eth2-prysm-ext-test.stage.bloxinfra.com"
+  gateways:
+  - ethereum2-prysm-ext-test
+  http:
+  - route:
+    - destination:
+        host: ethereum2-prysm-test
+        port:
+          number: 13000
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: ethereum2-prysm-ext-test
+  namespace: test
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "eth2-prysm-ext-test.stage.bloxinfra.com"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ethereum2-prysm-grpc-test
+  namespace: test
+  labels:
+    application: ethereum2-prysm-test
+    version: v1
+spec:
+  selector:
+    application: ethereum2-prysm-test
+  type: ClusterIP
+  ports:
+  - name: grpc
+    protocol: TCP
+    port: 4000
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+---
 apiVersion: v1
 kind: Service
 metadata:

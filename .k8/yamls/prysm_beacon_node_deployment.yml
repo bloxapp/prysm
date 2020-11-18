@@ -80,39 +80,39 @@ spec:
     loadBalancer:
       consistentHash:
         httpHeaderName: x-public-key
----
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
-metadata:
-  name: ethereum2-prysm-ext-test
-  namespace: test
-spec:
-  hosts:
-  - "eth2-prysm-ext-test.stage.bloxinfra.com"
-  gateways:
-  - ethereum2-prysm-ext-test
-  http:
-  - route:
-    - destination:
-        host: ethereum2-prysm-test
-        port:
-          number: 13000
----
-apiVersion: networking.istio.io/v1alpha3
-kind: Gateway
-metadata:
-  name: ethereum2-prysm-ext-test
-  namespace: test
-spec:
-  selector:
-    istio: ingressgateway
-  servers:
-  - port:
-      number: 80
-      name: http
-      protocol: HTTP
-    hosts:
-    - "eth2-prysm-ext-test.stage.bloxinfra.com"
+#---
+#apiVersion: networking.istio.io/v1alpha3
+#kind: VirtualService
+#metadata:
+#  name: ethereum2-prysm-ext-test
+#  namespace: test
+#spec:
+#  hosts:
+#  - "eth2-prysm-ext-test.stage.bloxinfra.com"
+#  gateways:
+#  - ethereum2-prysm-ext-test
+#  http:
+#  - route:
+#    - destination:
+#        host: ethereum2-prysm-test
+#        port:
+#          number: 13000
+#---
+#apiVersion: networking.istio.io/v1alpha3
+#kind: Gateway
+#metadata:
+#  name: ethereum2-prysm-ext-test
+#  namespace: test
+#spec:
+#  selector:
+#    istio: ingressgateway
+#  servers:
+#  - port:
+#      number: 80
+#      name: http
+#      protocol: HTTP
+#    hosts:
+#    - "eth2-prysm-ext-test.stage.bloxinfra.com"
 ---
 apiVersion: v1
 kind: Service
@@ -138,6 +138,30 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  name: ethereum2-prysm-test-ext
+  namespace: test
+  annotations:
+    "external-dns.alpha.kubernetes.io/hostname": eth2-prysm-ext-test.stage.bloxinfra.com
+  labels:
+    application: ethereum2-prysm-test
+    version: v1
+spec:
+  ports:
+    - port: 12000
+      protocol: TCP
+      targetPort: 12000
+      name: ext-12000
+    - port: 13000
+      protocol: TCP
+      targetPort: 13000
+      name: ext-13000
+  selector:
+    application: ethereum2-prysm-test
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
   name: ethereum2-prysm-test
   namespace: test
   labels:
@@ -158,6 +182,10 @@ spec:
       protocol: TCP
       targetPort: 6668
       name: ext-6668
+    - port: 12000
+      protocol: UDP
+      targetPort: 12000
+      name: ext-12000
     - port: 13000
       protocol: TCP
       targetPort: 13000
@@ -216,6 +244,8 @@ spec:
           name: ext-4000
         - containerPort: 6668
           name: ext-6668
+        - containerPort: 12000
+          name: ext-12000
         - containerPort: 13000
           name: ext-13000
         volumeMounts:

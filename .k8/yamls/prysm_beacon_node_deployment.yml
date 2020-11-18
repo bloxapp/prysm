@@ -147,6 +147,10 @@ metadata:
     version: v1
 spec:
   ports:
+    - port: 3500
+      protocol: TCP
+      targetPort: 3500
+      name: ext-3500
     - port: 12000
       protocol: TCP
       targetPort: 12000

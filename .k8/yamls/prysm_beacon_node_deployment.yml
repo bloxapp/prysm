@@ -163,7 +163,7 @@ spec:
       targetPort: 13000
       name: ext-13000
   selector:
-    application: ethereum2-prysm
+    application: ethereum2-prysm-test
   sessionAffinity: ClientIP
   sessionAffinityConfig:
     clientIP:

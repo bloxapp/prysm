@@ -5,7 +5,7 @@ stages:
 variables:
 
   #GLOBAL
-  IMAGE_NAME: prysm-beacon-node
+  IMAGE_NAME: prysm-beacon-node-test
 
   #STAGE
   ACCOUNT_ID_INFRA_STAGE: 121827225315
@@ -27,7 +27,7 @@ Build stage Docker image:
     - $DOCKER_LOGIN_TO_INFRA_STAGE_REPO && docker push $DOCKER_REPO_INFRA_STAGE:$CI_BUILD_REF
 
   only:
-    - master
+    - stage
 
 Deploy to blox-infra-stage cluster:
   stage: deploy
@@ -39,6 +39,6 @@ Deploy to blox-infra-stage cluster:
     - chmod +x ./kubectl
     - mv ./kubectl /usr/bin/kubectl
     - export K8S_API_VERSION=$INFRA_STAGE_K8_API_VERSION
-    - .k8/scripts/deploy-yamls-on-k8s.sh $DOCKER_REPO_INFRA_STAGE $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_STAGE blox-infra-stage kubernetes-admin@blox-infra stage.bloxinfra.com $K8S_API_VERSION
+    - .k8/scripts/deploy-yamls-on-k8s.sh $DOCKER_REPO_INFRA_STAGE $CI_BUILD_REF test $APP_REPLICAS_INFRA_STAGE blox-infra-stage kubernetes-admin@blox-infra stage.bloxinfra.com $K8S_API_VERSION
   only:
-    - master
+    - stage

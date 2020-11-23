@@ -3,6 +3,7 @@
 package flags
 
 import (
+	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/urfave/cli/v2"
 )
 
@@ -17,7 +18,7 @@ var (
 	DepositContractFlag = &cli.StringFlag{
 		Name:  "deposit-contract",
 		Usage: "Deposit contract address. Beacon chain node will listen logs coming from the deposit contract to determine when validator is eligible to participate.",
-		Value: "0x07b39F4fDE4A38bACe212b546dAc87C58DfE3fDC", // Medalla deposit contract address.
+		Value: params.BeaconNetworkConfig().DepositContractAddress,
 	}
 	// RPCHost defines the host on which the RPC server should listen.
 	RPCHost = &cli.StringFlag{
@@ -69,7 +70,7 @@ var (
 		Name: "grpc-gateway-corsdomain",
 		Usage: "Comma separated list of domains from which to accept cross origin requests " +
 			"(browser enforced). This flag has no effect if not used with --grpc-gateway-port.",
-		Value: "http://localhost:4242,http://127.0.0.1:4242,http://localhost:4200",
+		Value: "http://localhost:4200,http://localhost:7500,http://127.0.0.1:4200,http://127.0.0.1:7500,http://0.0.0.0:4200,http://0.0.0.0:7500",
 	}
 	// MinSyncPeers specifies the required number of successful peer handshakes in order
 	// to start syncing with external peers.
@@ -82,7 +83,7 @@ var (
 	ContractDeploymentBlock = &cli.IntFlag{
 		Name:  "contract-deployment-block",
 		Usage: "The eth1 block in which the deposit contract was deployed.",
-		Value: 2844925,
+		Value: 11184524,
 	}
 	// SetGCPercent is the percentage of current live allocations at which the garbage collector is to run.
 	SetGCPercent = &cli.IntFlag{
@@ -129,6 +130,10 @@ var (
 	EnableDebugRPCEndpoints = &cli.BoolFlag{
 		Name:  "enable-debug-rpc-endpoints",
 		Usage: "Enables the debug rpc service, containing utility endpoints such as /eth/v1alpha1/beacon/state.",
+	}
+	SubscribeToAllSubnets = &cli.BoolFlag{
+		Name:  "subscribe-all-subnets",
+		Usage: "Subscribe to all possible attestation subnets.",
 	}
 	// HistoricalSlasherNode is a set of beacon node flags required for performing historical detection with a slasher.
 	HistoricalSlasherNode = &cli.BoolFlag{

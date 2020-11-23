@@ -11,6 +11,7 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	pubsubpb "github.com/libp2p/go-libp2p-pubsub/pb"
+	gcache "github.com/patrickmn/go-cache"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	mock "github.com/prysmaticlabs/prysm/beacon-chain/blockchain/testing"
 	"github.com/prysmaticlabs/prysm/beacon-chain/cache"
@@ -23,6 +24,7 @@ import (
 	"github.com/prysmaticlabs/prysm/beacon-chain/state/stategen"
 	mockSync "github.com/prysmaticlabs/prysm/beacon-chain/sync/initial-sync/testing"
 	pb "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
+	"github.com/prysmaticlabs/prysm/shared/abool"
 	"github.com/prysmaticlabs/prysm/shared/bls"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
@@ -161,7 +163,7 @@ func TestValidateBeaconBlockPubSub_ValidProposerSignature(t *testing.T) {
 		blockNotifier:       chainService.BlockNotifier(),
 		seenBlockCache:      c,
 		badBlockCache:       c2,
-		slotToPendingBlocks: make(map[uint64][]*ethpb.SignedBeaconBlock),
+		slotToPendingBlocks: gcache.New(time.Second, 2*time.Second),
 		seenPendingBlocks:   make(map[[32]byte]bool),
 		stateSummaryCache:   stateSummaryCache,
 		stateGen:            stateGen,
@@ -224,7 +226,7 @@ func TestValidateBeaconBlockPubSub_AdvanceEpochsForState(t *testing.T) {
 		blockNotifier:       chainService.BlockNotifier(),
 		seenBlockCache:      c,
 		badBlockCache:       c2,
-		slotToPendingBlocks: make(map[uint64][]*ethpb.SignedBeaconBlock),
+		slotToPendingBlocks: gcache.New(time.Second, 2*time.Second),
 		seenPendingBlocks:   make(map[[32]byte]bool),
 		stateSummaryCache:   stateSummaryCache,
 		stateGen:            stateGen,
@@ -303,12 +305,13 @@ func TestValidateBeaconBlockPubSub_RejectBlocksFromFuture(t *testing.T) {
 	r := &Service{
 		p2p:                 p,
 		db:                  db,
+		chainStarted:        abool.New(),
 		initialSync:         &mockSync.Sync{IsSyncing: false},
 		chain:               chainService,
 		blockNotifier:       chainService.BlockNotifier(),
 		seenBlockCache:      c,
 		badBlockCache:       c2,
-		slotToPendingBlocks: make(map[uint64][]*ethpb.SignedBeaconBlock),
+		slotToPendingBlocks: gcache.New(time.Second, 2*time.Second),
 		seenPendingBlocks:   make(map[[32]byte]bool),
 	}
 
@@ -413,7 +416,7 @@ func TestValidateBeaconBlockPubSub_SeenProposerSlot(t *testing.T) {
 		blockNotifier:       chainService.BlockNotifier(),
 		seenBlockCache:      c,
 		badBlockCache:       c2,
-		slotToPendingBlocks: make(map[uint64][]*ethpb.SignedBeaconBlock),
+		slotToPendingBlocks: gcache.New(time.Second, 2*time.Second),
 		seenPendingBlocks:   make(map[[32]byte]bool),
 		stateSummaryCache:   cache.NewStateSummaryCache(),
 	}
@@ -477,7 +480,6 @@ func TestValidateBeaconBlockPubSub_FilterByFinalizedEpoch(t *testing.T) {
 	}
 
 	r.validateBeaconBlockPubSub(context.Background(), "", m)
-	require.LogsContain(t, hook, "Block slot older/equal than last finalized epoch start slot, rejecting it")
 
 	hook.Reset()
 	b.Block.Slot = params.BeaconConfig().SlotsPerEpoch
@@ -492,7 +494,6 @@ func TestValidateBeaconBlockPubSub_FilterByFinalizedEpoch(t *testing.T) {
 	}
 
 	r.validateBeaconBlockPubSub(context.Background(), "", m)
-	require.LogsDoNotContain(t, hook, "Block slot older/equal than last finalized epoch start slot, rejecting itt")
 }
 
 func TestValidateBeaconBlockPubSub_ParentNotFinalizedDescendant(t *testing.T) {
@@ -539,7 +540,7 @@ func TestValidateBeaconBlockPubSub_ParentNotFinalizedDescendant(t *testing.T) {
 		blockNotifier:       chainService.BlockNotifier(),
 		seenBlockCache:      c,
 		badBlockCache:       c2,
-		slotToPendingBlocks: make(map[uint64][]*ethpb.SignedBeaconBlock),
+		slotToPendingBlocks: gcache.New(time.Second, 2*time.Second),
 		seenPendingBlocks:   make(map[[32]byte]bool),
 		stateSummaryCache:   stateSummaryCache,
 		stateGen:            stateGen,
@@ -603,7 +604,7 @@ func TestValidateBeaconBlockPubSub_InvalidParentBlock(t *testing.T) {
 		blockNotifier:       chainService.BlockNotifier(),
 		seenBlockCache:      c,
 		badBlockCache:       c2,
-		slotToPendingBlocks: make(map[uint64][]*ethpb.SignedBeaconBlock),
+		slotToPendingBlocks: gcache.New(time.Second, 2*time.Second),
 		seenPendingBlocks:   make(map[[32]byte]bool),
 		stateSummaryCache:   stateSummaryCache,
 		stateGen:            stateGen,
@@ -703,7 +704,7 @@ func TestValidateBeaconBlockPubSub_RejectEvilBlocksFromFuture(t *testing.T) {
 		blockNotifier:       chainService.BlockNotifier(),
 		seenBlockCache:      c,
 		badBlockCache:       c2,
-		slotToPendingBlocks: make(map[uint64][]*ethpb.SignedBeaconBlock),
+		slotToPendingBlocks: gcache.New(time.Second, 2*time.Second),
 		seenPendingBlocks:   make(map[[32]byte]bool),
 		stateSummaryCache:   stateSummaryCache,
 		stateGen:            stateGen,

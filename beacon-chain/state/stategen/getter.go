@@ -193,6 +193,11 @@ func (s *State) loadStateByRoot(ctx context.Context, blockRoot [32]byte) (*state
 		return nil, errUnknownBoundaryState
 	}
 
+	// Return state early if we are retrieving it from our finalized state cache.
+	if startState.Slot() == targetSlot {
+		return startState, nil
+	}
+
 	blks, err := s.LoadBlocks(ctx, startState.Slot()+1, targetSlot, bytesutil.ToBytes32(summary.Root))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load blocks for hot state using root")
@@ -223,6 +228,13 @@ func (s *State) loadStateBySlot(ctx context.Context, slot uint64) (*state.Beacon
 	lastValidRoot, lastValidSlot, err := s.lastSavedBlock(ctx, slot)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get last valid block for hot state using slot")
+	}
+
+	// This is an impossible scenario.
+	// In the event where current state slot is greater or equal to last valid block slot,
+	// we should just process state up to input slot.
+	if startState.Slot() >= lastValidSlot {
+		return processSlotsStateGen(ctx, startState, slot)
 	}
 
 	// Load and replay blocks to get the intermediate state.

@@ -2,25 +2,25 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: ethereum2-3500-prysm-test
-  namespace: test
+  name: ethereum2-3500-prysm
+  namespace: REPLACE_NAMESPACE
 spec:
   hosts:
-  - "eth2-3500-prysm-test.stage.bloxinfra.com"
+  - "eth2-3500-prysm.REPLACE_DOMAIN_SUFFIX"
   gateways:
-  - ethereum2-3500-prysm-test
+  - ethereum2-3500-prysm
   http:
   - route:
     - destination:
-        host: ethereum2-prysm-test
+        host: ethereum2-prysm
         port:
           number: 3500
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: ethereum2-3500-prysm-test
-  namespace: test
+  name: ethereum2-3500-prysm
+  namespace: REPLACE_NAMESPACE
 spec:
   selector:
     istio: ingressgateway-int
@@ -30,30 +30,30 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "eth2-3500-prysm-test.stage.bloxinfra.com"
+    - "eth2-3500-prysm.REPLACE_DOMAIN_SUFFIX"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: ethereum2-4000-prysm-test
-  namespace: test
+  name: ethereum2-4000-prysm
+  namespace: REPLACE_NAMESPACE
 spec:
   hosts:
-  - "eth2-4000-prysm-test.stage.bloxinfra.com"
+  - "eth2-4000-prysm.REPLACE_DOMAIN_SUFFIX"
   gateways:
-  - ethereum2-4000-prysm-test
+  - ethereum2-4000-prysm
   http:
   - route:
     - destination:
-        host: ethereum2-prysm-grpc-test
+        host: ethereum2-prysm-grpc
         port:
           number: 4000
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: ethereum2-4000-prysm-test
-  namespace: test
+  name: ethereum2-4000-prysm
+  namespace: REPLACE_NAMESPACE
 spec:
   selector:
     istio: ingressgateway-int
@@ -63,68 +63,68 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "eth2-4000-prysm-test.stage.bloxinfra.com"
+    - "eth2-4000-prysm.REPLACE_DOMAIN_SUFFIX"
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
   labels:
-    application: ethereum2-prysm-test
-    run: ethereum2-prysm-test
+    application: ethereum2-prysm
+    run: ethereum2-prysm
     version: v1
-  name: ethereum2-prysm-test
-  namespace: test
+  name: ethereum2-prysm
+  namespace: blockchain
 spec:
-  host: ethereum2-prysm-test
+  host: ethereum2-prysm
   trafficPolicy:
     loadBalancer:
       consistentHash:
         httpHeaderName: x-public-key
-#---
-#apiVersion: networking.istio.io/v1alpha3
-#kind: VirtualService
-#metadata:
-#  name: ethereum2-prysm-ext-test
-#  namespace: test
-#spec:
-#  hosts:
-#  - "eth2-prysm-ext-test.stage.bloxinfra.com"
-#  gateways:
-#  - ethereum2-prysm-ext-test
-#  http:
-#  - route:
-#    - destination:
-#        host: ethereum2-prysm-test
-#        port:
-#          number: 13000
-#---
-#apiVersion: networking.istio.io/v1alpha3
-#kind: Gateway
-#metadata:
-#  name: ethereum2-prysm-ext-test
-#  namespace: test
-#spec:
-#  selector:
-#    istio: ingressgateway
-#  servers:
-#  - port:
-#      number: 80
-#      name: http
-#      protocol: HTTP
-#    hosts:
-#    - "eth2-prysm-ext-test.stage.bloxinfra.com"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ethereum2-4000-prysm-ext
+  namespace: blockchain
+spec:
+  hosts:
+  - "eth2-4000-prysm-ext.REPLACE_DOMAIN_SUFFIX"
+  gateways:
+  - ethereum2-4000-prysm-ext
+  http:
+  - route:
+    - destination:
+        host: ethereum2-prysm-grpc
+        port:
+          number: 4000
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: ethereum2-4000-prysm-ext
+  namespace: blockchain
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "eth2-4000-prysm-ext.REPLACE_DOMAIN_SUFFIX"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ethereum2-prysm-grpc-test
-  namespace: test
+  name: ethereum2-prysm-grpc
+  namespace: blockchain
   labels:
-    application: ethereum2-prysm-test
+    application: ethereum2-prysm
     version: v1
 spec:
   selector:
-    application: ethereum2-prysm-test
+    application: ethereum2-prysm
   type: ClusterIP
   ports:
   - name: grpc
@@ -138,38 +138,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ethereum2-prysm-test-ext
-  namespace: test
-  annotations:
-    "external-dns.alpha.kubernetes.io/hostname": eth2-prysm-ext-test.stage.bloxinfra.com
+  name: ethereum2-prysm
+  namespace: REPLACE_NAMESPACE
   labels:
-    application: ethereum2-prysm-test
-    version: v1
-spec:
-  ports:
-    - port: 3500
-      protocol: TCP
-      targetPort: 3500
-      name: ext-3500
-    - port: 12000
-      protocol: TCP
-      targetPort: 12000
-      name: ext-12000
-    - port: 13000
-      protocol: TCP
-      targetPort: 13000
-      name: ext-13000
-  selector:
-    application: ethereum2-prysm-test
-  type: LoadBalancer
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ethereum2-prysm-test
-  namespace: test
-  labels:
-    application: ethereum2-prysm-test
+    application: ethereum2-prysm
     version: v1
 spec:
   type: ClusterIP
@@ -186,16 +158,12 @@ spec:
       protocol: TCP
       targetPort: 6668
       name: ext-6668
-    - port: 12000
-      protocol: UDP
-      targetPort: 12000
-      name: ext-12000
     - port: 13000
       protocol: TCP
       targetPort: 13000
       name: ext-13000
   selector:
-    application: ethereum2-prysm-test
+    application: ethereum2-prysm
   sessionAffinity: ClientIP
   sessionAffinityConfig:
     clientIP:
@@ -204,21 +172,21 @@ spec:
 apiVersion: REPLACE_API_VERSION
 kind: StatefulSet
 metadata:
-  namespace: test
-  name: ethereum2-prysm-test
+  namespace: REPLACE_NAMESPACE
+  name: ethereum2-prysm
 spec:
-  replicas: 1
+  replicas: 3
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      name: ethereum2-prysm-test
-      application: ethereum2-prysm-test
-  serviceName: ethereum2-prysm-test
+      name: ethereum2-prysm
+      application: ethereum2-prysm
+  serviceName: ethereum2-prysm
   template:
     metadata:
       labels:
-        name: ethereum2-prysm-test
-        application: ethereum2-prysm-test
+        name: ethereum2-prysm
+        application: ethereum2-prysm
     spec:
       affinity:
         podAntiAffinity:
@@ -226,7 +194,7 @@ spec:
           - podAffinityTerm:
               labelSelector:
                 matchLabels:
-                  application: ethereum2-prysm-test
+                  application: ethereum2-prysm
               topologyKey: kubernetes.io/hostname
             weight: 1
         nodeAffinity:
@@ -238,7 +206,7 @@ spec:
                 values:
                 - blockchain
       containers:
-      - name: ethereum2-prysm-test
+      - name: ethereum2-prysm
         image: REPLACE_DOCKER_REPO:REPLACE_IMAGETAG
         imagePullPolicy: Always
         ports:
@@ -248,19 +216,17 @@ spec:
           name: ext-4000
         - containerPort: 6668
           name: ext-6668
-        - containerPort: 12000
-          name: ext-12000
         - containerPort: 13000
           name: ext-13000
         volumeMounts:
         - mountPath: "/data"
-          name: ethereum2-prysm-test
+          name: ethereum2-prysm
       - name: ubuntu
         image: 121827225315.dkr.ecr.us-west-2.amazonaws.com/infra-stage-repo:ubuntu20
         imagePullPolicy: Always
         args: [bash, -c, sleep infinity]
         volumeMounts:
-        - name: ethereum2-script-prysm-test
+        - name: ethereum2-script-prysm
           mountPath: /root/sync-status.sh
           subPath: sync-status.sh
         readinessProbe:
@@ -272,11 +238,11 @@ spec:
           periodSeconds: 15
       volumes:
       - persistentVolumeClaim:
-          claimName: ethereum2-prysm-test
-        name: ethereum2-prysm-test
-      - name: ethereum2-script-prysm-test
+          claimName: ethereum2-prysm
+        name: ethereum2-prysm
+      - name: ethereum2-script-prysm
         configMap:
-          name: ethereum2-script-prysm-test
+          name: ethereum2-script-prysm
       tolerations:
       - effect: NoSchedule
         key: kubernetes.io/role
@@ -285,7 +251,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      name: ethereum2-prysm-test
+      name: ethereum2-prysm
     spec:
       accessModes:
       - ReadWriteOnce

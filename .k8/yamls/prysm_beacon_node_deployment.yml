@@ -114,6 +114,39 @@ spec:
     hosts:
     - "eth2-4000-prysm-ext.REPLACE_DOMAIN_SUFFIX"
 ---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: ethereum2-prysm-ext
+  namespace: blockchain
+spec:
+  hosts:
+  - "eth2-prysm-ext.stage.bloxinfra.com"
+  gateways:
+  - ethereum2-prysm-ext
+  http:
+  - route:
+    - destination:
+        host: ethereum2-prysm
+        port:
+          number: 13000
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: ethereum2-prysm-ext
+  namespace: blockchain
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "eth2-prysm-ext.stage.bloxinfra.com"
+---
 apiVersion: v1
 kind: Service
 metadata:

@@ -68,7 +68,7 @@ func (vs *Server) GetAttestationData(ctx context.Context, req *ethpb.Attestation
 	}
 	defer func() {
 		if err := vs.AttestationCache.MarkNotInProgress(req); err != nil {
-			log.WithError(err).Error("Failed to mark cache not in progress")
+			log.WithError(err).Error("Could not mark cache not in progress")
 		}
 	}()
 
@@ -93,7 +93,7 @@ func (vs *Server) GetAttestationData(ctx context.Context, req *ethpb.Attestation
 		}
 	}
 	if headState == nil {
-		return nil, status.Error(codes.Internal, "Failed to lookup parent state from head.")
+		return nil, status.Error(codes.Internal, "Could not lookup parent state from head.")
 	}
 
 	if helpers.CurrentEpoch(headState) < helpers.SlotToEpoch(req.Slot) {

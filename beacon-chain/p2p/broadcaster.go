@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 	"time"
-
 	"github.com/sirupsen/logrus"
 
 	"github.com/gogo/protobuf/proto"
@@ -51,7 +50,7 @@ func (s *Service) Broadcast(ctx context.Context, msg proto.Message) error {
 
 // BroadcastAttestation broadcasts an attestation to the p2p network.
 func (s *Service) BroadcastAttestation(ctx context.Context, subnet uint64, att *eth.Attestation) error {
-	_, span := trace.StartSpan(ctx, "p2p.BroadcastAttestation")
+	ctx, span := trace.StartSpan(ctx, "p2p.BroadcastAttestation")
 	defer span.End()
 	forkDigest, err := s.forkDigest()
 	if err != nil {
@@ -68,7 +67,7 @@ func (s *Service) BroadcastAttestation(ctx context.Context, subnet uint64, att *
 
 func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *eth.Attestation, forkDigest [4]byte) {
 	requestKey := ctx.Value("x-request-key")
-	ctx, span := trace.StartSpan(context.Background(), "p2p.broadcastAttestation")
+	ctx, span := trace.StartSpan(ctx, "p2p.broadcastAttestation")
 	defer span.End()
 	ctx = trace.NewContext(context.Background(), span) // clear parent context / deadline.
 

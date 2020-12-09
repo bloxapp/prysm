@@ -20,7 +20,6 @@ type Validator interface {
 	Done()
 	WaitForChainStart(ctx context.Context) error
 	WaitForSync(ctx context.Context) error
-	WaitForSynced(ctx context.Context) error
 	WaitForActivation(ctx context.Context) error
 	SlasherReady(ctx context.Context) error
 	CanonicalHeadSlot(ctx context.Context) (uint64, error)
@@ -34,7 +33,7 @@ type Validator interface {
 	ProposeBlock(ctx context.Context, slot uint64, pubKey [48]byte)
 	SubmitAggregateAndProof(ctx context.Context, slot uint64, pubKey [48]byte)
 	LogAttestationsSubmitted()
-	SaveProtections(ctx context.Context) error
+	ResetAttesterProtectionData()
 	UpdateDomainDataCaches(ctx context.Context, slot uint64)
 	WaitForWalletInitialization(ctx context.Context) error
 	AllValidatorsAreExited(ctx context.Context) (bool, error)
@@ -63,17 +62,11 @@ func run(ctx context.Context, v Validator) {
 			log.Fatalf("Slasher is not ready: %v", err)
 		}
 	}
-	if featureconfig.Get().WaitForSynced {
-		if err := v.WaitForSynced(ctx); err != nil {
-			log.Fatalf("Could not determine if chain started and beacon node is synced: %v", err)
-		}
-	} else {
-		if err := v.WaitForChainStart(ctx); err != nil {
-			log.Fatalf("Could not determine if beacon chain started: %v", err)
-		}
-		if err := v.WaitForSync(ctx); err != nil {
-			log.Fatalf("Could not determine if beacon node synced: %v", err)
-		}
+	if err := v.WaitForChainStart(ctx); err != nil {
+		log.Fatalf("Could not determine if beacon chain started: %v", err)
+	}
+	if err := v.WaitForSync(ctx); err != nil {
+		log.Fatalf("Could not determine if beacon node synced: %v", err)
 	}
 	if err := v.WaitForActivation(ctx); err != nil {
 		log.Fatalf("Could not wait for validator activation: %v", err)
@@ -86,9 +79,6 @@ func run(ctx context.Context, v Validator) {
 		handleAssignmentError(err, headSlot)
 	}
 
-	// We initially assume not all validators are exited
-	allExited := false
-
 	for {
 		ctx, span := trace.StartSpan(ctx, "validator.processSlot")
 
@@ -100,26 +90,20 @@ func run(ctx context.Context, v Validator) {
 		case slot := <-v.NextSlot():
 			span.AddAttributes(trace.Int64Attribute("slot", int64(slot)))
 
-			if allExited {
-				log.Info("All validators are exited, no more work to perform...")
-				continue
-			}
-			allExited, err = v.AllValidatorsAreExited(ctx)
+			allExited, err := v.AllValidatorsAreExited(ctx)
 			if err != nil {
 				log.WithError(err).Error("Could not check if validators are exited")
 			}
 			if allExited {
+				log.Info("All validators are exited, no more work to perform...")
 				continue
 			}
 
 			deadline := v.SlotDeadline(slot)
 			slotCtx, cancel := context.WithDeadline(ctx, deadline)
-			// Report this validator client's rewards and penalties throughout its lifecycle.
+
 			log := log.WithField("slot", slot)
 			log.WithField("deadline", deadline).Debug("Set deadline for proposals and attestations")
-			if err := v.LogValidatorGainsAndLosses(slotCtx, slot); err != nil {
-				log.WithError(err).Error("Could not report validator's rewards/penalties")
-			}
 
 			// Keep trying to update assignments if they are nil or if we are past an
 			// epoch transition in the beacon node's state.
@@ -170,11 +154,13 @@ func run(ctx context.Context, v Validator) {
 				}
 			}
 			// Wait for all processes to complete, then report span complete.
+
 			go func() {
 				wg.Wait()
+				// Log this client performance in the previous epoch
 				v.LogAttestationsSubmitted()
-				if err := v.SaveProtections(ctx); err != nil {
-					log.WithError(err).Error("Could not save validator protection")
+				if err := v.LogValidatorGainsAndLosses(slotCtx, slot); err != nil {
+					log.WithError(err).Error("Could not report validator's rewards/penalties")
 				}
 				span.End()
 			}()

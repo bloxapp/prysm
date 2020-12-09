@@ -131,13 +131,13 @@ func (s *State) stateSummary(ctx context.Context, blockRoot [32]byte) (*pb.State
 		}
 	}
 	if summary == nil {
-		return s.recoverStateSummary(ctx, blockRoot)
+		return s.RecoverStateSummary(ctx, blockRoot)
 	}
 	return summary, nil
 }
 
-// This recovers state summary object of a given block root by using the saved block in DB.
-func (s *State) recoverStateSummary(ctx context.Context, blockRoot [32]byte) (*pb.StateSummary, error) {
+// RecoverStateSummary recovers state summary object of a given block root by using the saved block in DB.
+func (s *State) RecoverStateSummary(ctx context.Context, blockRoot [32]byte) (*pb.StateSummary, error) {
 	if s.beaconDB.HasBlock(ctx, blockRoot) {
 		b, err := s.beaconDB.Block(ctx, blockRoot)
 		if err != nil {
@@ -149,7 +149,7 @@ func (s *State) recoverStateSummary(ctx context.Context, blockRoot [32]byte) (*p
 		}
 		return summary, nil
 	}
-	return nil, errUnknownStateSummary
+	return nil, errors.New("could not find block in DB")
 }
 
 // This loads a beacon state from either the cache or DB then replay blocks up the requested block root.
@@ -193,6 +193,11 @@ func (s *State) loadStateByRoot(ctx context.Context, blockRoot [32]byte) (*state
 		return nil, errUnknownBoundaryState
 	}
 
+	// Return state early if we are retrieving it from our finalized state cache.
+	if startState.Slot() == targetSlot {
+		return startState, nil
+	}
+
 	blks, err := s.LoadBlocks(ctx, startState.Slot()+1, targetSlot, bytesutil.ToBytes32(summary.Root))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load blocks for hot state using root")
@@ -223,6 +228,13 @@ func (s *State) loadStateBySlot(ctx context.Context, slot uint64) (*state.Beacon
 	lastValidRoot, lastValidSlot, err := s.lastSavedBlock(ctx, slot)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not get last valid block for hot state using slot")
+	}
+
+	// This is an impossible scenario.
+	// In the event where current state slot is greater or equal to last valid block slot,
+	// we should just process state up to input slot.
+	if startState.Slot() >= lastValidSlot {
+		return processSlotsStateGen(ctx, startState, slot)
 	}
 
 	// Load and replay blocks to get the intermediate state.

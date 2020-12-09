@@ -3,7 +3,6 @@ package initialsync
 import (
 	"context"
 	"math"
-	"sort"
 	"sync"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/helpers"
 	"github.com/prysmaticlabs/prysm/beacon-chain/flags"
 	"github.com/prysmaticlabs/prysm/beacon-chain/p2p/peers/scorers"
-	"github.com/prysmaticlabs/prysm/shared/featureconfig"
 	"github.com/prysmaticlabs/prysm/shared/mathutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/timeutils"
@@ -23,7 +21,7 @@ import (
 func (f *blocksFetcher) getPeerLock(pid peer.ID) *peerLock {
 	f.Lock()
 	defer f.Unlock()
-	if lock, ok := f.peerLocks[pid]; ok {
+	if lock, ok := f.peerLocks[pid]; ok && lock != nil {
 		lock.accessed = timeutils.Now()
 		return lock
 	}
@@ -91,49 +89,14 @@ func (f *blocksFetcher) waitForMinimumPeers(ctx context.Context) ([]peer.ID, err
 	}
 }
 
-// filterPeers returns transformed list of peers, weight ordered or randomized, constrained
-// if necessary (when only percentage of peers returned).
-// When peer scorer is enabled, fallbacks filterScoredPeers.
-func (f *blocksFetcher) filterPeers(ctx context.Context, peers []peer.ID, peersPercentage float64) ([]peer.ID, error) {
-	if featureconfig.Get().EnablePeerScorer {
-		return f.filterScoredPeers(ctx, peers, peersPercentagePerRequest)
-	}
-
-	if len(peers) == 0 {
-		return peers, nil
-	}
-
-	// Shuffle peers to prevent a bad peer from
-	// stalling sync with invalid blocks.
-	f.rand.Shuffle(len(peers), func(i, j int) {
-		peers[i], peers[j] = peers[j], peers[i]
-	})
-
-	// Select sub-sample from peers (honoring min-max invariants).
-	peers = trimPeers(peers, peersPercentage)
-
-	// Order peers by remaining capacity, effectively turning in-order
-	// round robin peer processing into a weighted one (peers with higher
-	// remaining capacity are preferred). Peers with the same capacity
-	// are selected at random, since we have already shuffled peers
-	// at this point.
-	sort.SliceStable(peers, func(i, j int) bool {
-		cap1 := f.rateLimiter.Remaining(peers[i].String())
-		cap2 := f.rateLimiter.Remaining(peers[j].String())
-		return cap1 > cap2
-	})
-
-	return peers, nil
-}
-
-// filterScoredPeers returns transformed list of peers, weight sorted by scores and capacity remaining.
+// filterPeers returns transformed list of peers, weight sorted by scores and capacity remaining.
 // List can be further constrained using peersPercentage, where only percentage of peers are returned.
-func (f *blocksFetcher) filterScoredPeers(ctx context.Context, peers []peer.ID, peersPercentage float64) ([]peer.ID, error) {
-	ctx, span := trace.StartSpan(ctx, "initialsync.filterScoredPeers")
+func (f *blocksFetcher) filterPeers(ctx context.Context, peers []peer.ID, peersPercentage float64) []peer.ID {
+	ctx, span := trace.StartSpan(ctx, "initialsync.filterPeers")
 	defer span.End()
 
 	if len(peers) == 0 {
-		return peers, nil
+		return peers
 	}
 
 	// Sort peers using both block provider score and, custom, capacity based score (see
@@ -153,9 +116,8 @@ func (f *blocksFetcher) filterScoredPeers(ctx context.Context, peers []peer.ID, 
 		overallScore := blockProviderScore*(1.0-f.capacityWeight) + capScore*f.capacityWeight
 		return math.Round(overallScore*scorers.ScoreRoundingFactor) / scorers.ScoreRoundingFactor
 	})
-	peers = trimPeers(peers, peersPercentage)
 
-	return peers, nil
+	return trimPeers(peers, peersPercentage)
 }
 
 // trimPeers limits peer list, returning only specified percentage of peers.

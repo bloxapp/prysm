@@ -21,9 +21,6 @@ import (
 // GossipTypeMapping.
 var ErrMessageNotMapped = errors.New("message type is not mapped to a PubSub topic")
 
-// Max number of attempts to search the network for a specific subnet.
-const maxSubnetDiscoveryAttempts = 3
-
 // Broadcast a message to the p2p network.
 func (s *Service) Broadcast(ctx context.Context, msg proto.Message) error {
 	ctx, span := trace.StartSpan(ctx, "p2p.Broadcast")
@@ -77,7 +74,7 @@ func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *
 
 	// Ensure we have peers with this subnet.
 	s.subnetLocker(subnet).RLock()
-	hasPeer := s.hasPeerWithSubnet(subnet)
+	hasPeer := s.hasPeerWithSubnet(attestationToTopic(subnet, forkDigest))
 	s.subnetLocker(subnet).RUnlock()
 
 	span.AddAttributes(
@@ -100,29 +97,18 @@ func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *
 		if err := func() error {
 			s.subnetLocker(subnet).Lock()
 			defer s.subnetLocker(subnet).Unlock()
-			for i := 0; i < maxSubnetDiscoveryAttempts; i++ {
-				if err := ctx.Err(); err != nil {
-					return err
-				}
-				ok, err := s.FindPeersWithSubnet(ctx, subnet)
-				if err != nil {
-					log.WithError(err).Error("------- FAILED TO FIND PEERS WITH SUBNET ---------------")
-					return err
-				}
-				if ok {
-					log.WithFields(logrus.Fields{
-						"subnet":  subnet,
-						"attempt": i,
-					}).Error("--------- PEER FOUND! ---------------")
-					savedAttestationBroadcasts.Inc()
-					return nil
-				} else {
-					log.WithFields(logrus.Fields{
-						"subnet":  subnet,
-						"attempt": i,
-					}).Error("--------- SUBNET PEER NOT FOUND! ---------------")
-				}
+			ok, err := s.FindPeersWithSubnet(ctx, attestationToTopic(subnet, forkDigest), subnet, 1)
+			if err != nil {
+				log.WithError(err).Error("------- FAILED TO FIND PEERS WITH SUBNET ---------------")
+				return err
 			}
+			if ok {
+				log.WithField("subnet", subnet).Error("--------- PEER FOUND! ---------------")
+				savedAttestationBroadcasts.Inc()
+				return nil
+			}
+
+			log.WithField("subnet", subnet).Error("--------- SUBNET PEER NOT FOUND! ---------------")
 			return errors.New("failed to find peers for subnet")
 		}(); err != nil {
 			log.WithError(err).Error("Failed to find peers")

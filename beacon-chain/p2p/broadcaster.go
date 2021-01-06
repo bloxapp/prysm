@@ -3,6 +3,7 @@ package p2p
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
@@ -117,7 +118,12 @@ func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *
 		}
 	}
 
-	log.WithField("topic", attestationToTopic(subnet, forkDigest)).Info("---------- BROADCAST TOPIC --------------")
+	attRaw, _ := json.Marshal(att)
+
+	log.WithFields(logrus.Fields{
+		"topic": attestationToTopic(subnet, forkDigest),
+		"att":   string(attRaw),
+	}).Info("---------- BROADCAST TOPIC --------------")
 	if err := s.broadcastObject(context.WithValue(ctx, "x-request-key", requestKey), att, attestationToTopic(subnet, forkDigest)); err != nil {
 		log.WithError(err).Error("------------ FAILED TO BROADCAST ATTESTATION --------------")
 		traceutil.AnnotateError(span, err)

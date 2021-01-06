@@ -2,7 +2,10 @@ package blockchain
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/pkg/errors"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
@@ -44,6 +47,9 @@ var ErrTargetRootNotInDB = errors.New("target root does not exist in db")
 func (s *Service) onAttestation(ctx context.Context, a *ethpb.Attestation) ([]uint64, error) {
 	ctx, span := trace.StartSpan(ctx, "blockChain.onAttestation")
 	defer span.End()
+
+	attData, _ := json.Marshal(a)
+	logrus.WithField("attData", string(attData)).Info("blockChain.onAttestation: got attestation object")
 
 	if a == nil {
 		return nil, errors.New("nil attestation")

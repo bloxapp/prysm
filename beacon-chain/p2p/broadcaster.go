@@ -118,7 +118,10 @@ func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *
 		}
 	}
 
-	attRaw, _ := json.Marshal(att)
+	attRaw, err := json.Marshal(att)
+	if err != nil {
+		log.WithError(err).Error("failed to marshal attestation")
+	}
 
 	log.WithFields(logrus.Fields{
 		"topic": attestationToTopic(subnet, forkDigest),

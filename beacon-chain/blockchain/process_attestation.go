@@ -48,8 +48,12 @@ func (s *Service) onAttestation(ctx context.Context, a *ethpb.Attestation) ([]ui
 	ctx, span := trace.StartSpan(ctx, "blockChain.onAttestation")
 	defer span.End()
 
-	attData, _ := json.Marshal(a)
-	logrus.WithField("attData", string(attData)).Info("blockChain.onAttestation: got attestation object")
+	attRaw, err := json.Marshal(a)
+	if err != nil {
+		log.WithError(err).Error("failed to marshal attestation")
+	}
+
+	logrus.WithField("attRaw", string(attRaw)).Info("blockChain.onAttestation: got attestation object")
 
 	if a == nil {
 		return nil, errors.New("nil attestation")

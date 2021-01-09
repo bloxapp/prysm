@@ -83,6 +83,7 @@ func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *
 		trace.BoolAttribute("hasPeer", hasPeer),
 		trace.Int64Attribute("slot", int64(att.Data.Slot)),
 		trace.Int64Attribute("subnet", int64(subnet)),
+		trace.StringAttribute("requestKey", fmt.Sprintf("%s", requestKey)),
 	)
 
 	log := log.WithFields(logrus.Fields{

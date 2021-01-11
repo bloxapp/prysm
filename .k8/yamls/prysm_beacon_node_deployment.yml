@@ -244,13 +244,25 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 3500
+          hostPort: 3500
           name: ext-3500
+          protocol: TCP
         - containerPort: 4000
+          hostPort: 4000
           name: ext-4000
+          protocol: TCP
         - containerPort: 6668
+          hostPort: 6668
           name: ext-6668
+          protocol: TCP
         - containerPort: 13000
+          hostPort: 13000
           name: ext-13000
+          protocol: TCP
+        - containerPort: 12000
+          hostPort: 12000
+          name: discv5
+          protocol: UDP
         volumeMounts:
         - mountPath: "/data"
           name: ethereum2-prysm
@@ -280,6 +292,7 @@ spec:
       - effect: NoSchedule
         key: kubernetes.io/role
         operator: Exists 
+      hostNetwork: true
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:

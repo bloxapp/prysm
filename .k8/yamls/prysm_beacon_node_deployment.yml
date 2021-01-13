@@ -250,7 +250,13 @@ spec:
         - containerPort: 6668
           name: ext-6668
         - containerPort: 13000
+          hostPort: 13000
           name: ext-13000
+          protocol: TCP
+        - containerPort: 12000
+          hostPort: 12000
+          name: discv5
+          protocol: UDP
         volumeMounts:
         - mountPath: "/data"
           name: ethereum2-prysm
@@ -280,6 +286,7 @@ spec:
       - effect: NoSchedule
         key: kubernetes.io/role
         operator: Exists 
+      hostNetwork: true
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:

@@ -3,6 +3,7 @@ package p2p
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -63,7 +64,9 @@ func (s *Service) PublishToTopic(ctx context.Context, topic string, data []byte,
 	// Wait for at least 1 peer to be available to receive the published message.
 	for {
 		if len(topicHandle.ListPeers()) > 0 || flags.Get().MinimumSyncPeers == 0 {
-			log.WithField("topic", topic).Error("--------- PEERS FOUND!!! -------------")
+			log.WithFields(logrus.Fields{
+				"peers":topicHandle.ListPeers(),
+			}).Info("--------- PEERS FOUND!!! -------------")
 			if err := topicHandle.Publish(ctx, data, opts...); err != nil {
 				return fmt.Errorf("failed to publish data into topic: %s", err)
 			}

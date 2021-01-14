@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ethereum2-script-prysm
+  name: ethereum2-script-prysm-mainnet
   namespace: blockchain
 data:
   sync-status.sh: |

@@ -2,24 +2,24 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: ethereum2-3500-prysm
+  name: ethereum2-3500-prysm-mainnet
   namespace: REPLACE_NAMESPACE
 spec:
   hosts:
-  - "eth2-3500-prysm.REPLACE_DOMAIN_SUFFIX"
+  - "eth2-3500-prysm-mainnet.REPLACE_DOMAIN_SUFFIX"
   gateways:
-  - ethereum2-3500-prysm
+  - ethereum2-3500-prysm-mainnet
   http:
   - route:
     - destination:
-        host: ethereum2-prysm
+        host: ethereum2-prysm-mainnet
         port:
           number: 3500
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: ethereum2-3500-prysm
+  name: ethereum2-3500-prysm-mainnet
   namespace: REPLACE_NAMESPACE
 spec:
   selector:
@@ -30,29 +30,29 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "eth2-3500-prysm.REPLACE_DOMAIN_SUFFIX"
+    - "eth2-3500-prysm-mainnet.REPLACE_DOMAIN_SUFFIX"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: ethereum2-4000-prysm
+  name: ethereum2-4000-prysm-mainnet
   namespace: REPLACE_NAMESPACE
 spec:
   hosts:
-  - "eth2-4000-prysm.REPLACE_DOMAIN_SUFFIX"
+  - "eth2-4000-prysm-mainnet.REPLACE_DOMAIN_SUFFIX"
   gateways:
-  - ethereum2-4000-prysm
+  - ethereum2-4000-prysm-mainnet
   http:
   - route:
     - destination:
-        host: ethereum2-prysm-grpc
+        host: ethereum2-prysm-grpc-mainnet
         port:
           number: 4000
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: ethereum2-4000-prysm
+  name: ethereum2-4000-prysm-mainnet
   namespace: REPLACE_NAMESPACE
 spec:
   selector:
@@ -63,19 +63,19 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "eth2-4000-prysm.REPLACE_DOMAIN_SUFFIX"
+    - "eth2-4000-prysm-mainnet.REPLACE_DOMAIN_SUFFIX"
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
   labels:
-    application: ethereum2-prysm
-    run: ethereum2-prysm
+    application: ethereum2-prysm-mainnet
+    run: ethereum2-prysm-mainnet
     version: v1
-  name: ethereum2-prysm
+  name: ethereum2-prysm-mainnet
   namespace: blockchain
 spec:
-  host: ethereum2-prysm
+  host: ethereum2-prysm-mainnet
   trafficPolicy:
     loadBalancer:
       consistentHash:
@@ -84,24 +84,24 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: ethereum2-4000-prysm-ext
+  name: ethereum2-4000-prysm-mainnet-ext
   namespace: blockchain
 spec:
   hosts:
-  - "eth2-4000-prysm-ext.REPLACE_DOMAIN_SUFFIX"
+  - "eth2-4000-prysm-mainnet-ext.REPLACE_DOMAIN_SUFFIX"
   gateways:
-  - ethereum2-4000-prysm-ext
+  - ethereum2-4000-prysm-mainnet-ext
   http:
   - route:
     - destination:
-        host: ethereum2-prysm-grpc
+        host: ethereum2-prysm-grpc-mainnet
         port:
           number: 4000
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: ethereum2-4000-prysm-ext
+  name: ethereum2-4000-prysm-mainnet-ext
   namespace: blockchain
 spec:
   selector:
@@ -112,29 +112,29 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "eth2-4000-prysm-ext.REPLACE_DOMAIN_SUFFIX"
+    - "eth2-4000-prysm-mainnet-ext.REPLACE_DOMAIN_SUFFIX"
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: ethereum2-prysm-ext
+  name: ethereum2-prysm-mainnet-ext
   namespace: blockchain
 spec:
   hosts:
-  - "eth2-prysm-ext.stage.bloxinfra.com"
+  - "eth2-prysm-mainnet-ext.stage.bloxinfra.com"
   gateways:
-  - ethereum2-prysm-ext
+  - ethereum2-prysm-mainnet-ext
   http:
   - route:
     - destination:
-        host: ethereum2-prysm
+        host: ethereum2-prysm-mainnet
         port:
-          number: 13000
+          number: 14000
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: ethereum2-prysm-ext
+  name: ethereum2-prysm-mainnet-ext
   namespace: blockchain
 spec:
   selector:
@@ -145,19 +145,19 @@ spec:
       name: http
       protocol: HTTP
     hosts:
-    - "eth2-prysm-ext.stage.bloxinfra.com"
+    - "eth2-prysm-mainnet-ext.stage.bloxinfra.com"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: ethereum2-prysm-grpc
+  name: ethereum2-prysm-grpc-mainnet
   namespace: blockchain
   labels:
-    application: ethereum2-prysm
+    application: ethereum2-prysm-mainnet
     version: v1
 spec:
   selector:
-    application: ethereum2-prysm
+    application: ethereum2-prysm-mainnet
   type: ClusterIP
   ports:
   - name: grpc
@@ -171,10 +171,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ethereum2-prysm
+  name: ethereum2-prysm-mainnet
   namespace: REPLACE_NAMESPACE
   labels:
-    application: ethereum2-prysm
+    application: ethereum2-prysm-mainnet
     version: v1
 spec:
   type: ClusterIP
@@ -191,12 +191,12 @@ spec:
       protocol: TCP
       targetPort: 6668
       name: ext-6668
-    - port: 13000
+    - port: 14000
       protocol: TCP
-      targetPort: 13000
-      name: ext-13000
+      targetPort: 14000
+      name: ext-14000
   selector:
-    application: ethereum2-prysm
+    application: ethereum2-prysm-mainnet
   sessionAffinity: ClientIP
   sessionAffinityConfig:
     clientIP:
@@ -206,20 +206,20 @@ apiVersion: REPLACE_API_VERSION
 kind: StatefulSet
 metadata:
   namespace: REPLACE_NAMESPACE
-  name: ethereum2-prysm
+  name: ethereum2-prysm-mainnet
 spec:
   replicas: 3
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      name: ethereum2-prysm
-      application: ethereum2-prysm
-  serviceName: ethereum2-prysm
+      name: ethereum2-prysm-mainnet
+      application: ethereum2-prysm-mainnet
+  serviceName: ethereum2-prysm-mainnet
   template:
     metadata:
       labels:
-        name: ethereum2-prysm
-        application: ethereum2-prysm
+        name: ethereum2-prysm-mainnet
+        application: ethereum2-prysm-mainnet
     spec:
       affinity:
         podAntiAffinity:
@@ -227,7 +227,7 @@ spec:
           - podAffinityTerm:
               labelSelector:
                 matchLabels:
-                  application: ethereum2-prysm
+                  application: ethereum2-prysm-mainnet
               topologyKey: kubernetes.io/hostname
             weight: 1
         nodeAffinity:
@@ -239,7 +239,7 @@ spec:
                 values:
                 - blockchain
       containers:
-      - name: ethereum2-prysm
+      - name: ethereum2-prysm-mainnet
         image: REPLACE_DOCKER_REPO:REPLACE_IMAGETAG
         imagePullPolicy: Always
         ports:
@@ -249,23 +249,23 @@ spec:
           name: ext-4000
         - containerPort: 6668
           name: ext-6668
-        - containerPort: 13000
-          hostPort: 13000
-          name: ext-13000
+        - containerPort: 14000
+          hostPort: 14000
+          name: ext-14000
           protocol: TCP
-        - containerPort: 12000
-          hostPort: 12000
+        - containerPort: 15000
+          hostPort: 15000
           name: discv5
           protocol: UDP
         volumeMounts:
         - mountPath: "/data"
-          name: ethereum2-prysm
+          name: ethereum2-prysm-mainnet
       - name: ubuntu
         image: 121827225315.dkr.ecr.us-west-2.amazonaws.com/infra-stage-repo:ubuntu20
         imagePullPolicy: Always
         args: [bash, -c, sleep infinity]
         volumeMounts:
-        - name: ethereum2-script-prysm
+        - name: ethereum2-script-prysm-mainnet
           mountPath: /root/sync-status.sh
           subPath: sync-status.sh
         readinessProbe:
@@ -277,11 +277,11 @@ spec:
           periodSeconds: 15
       volumes:
       - persistentVolumeClaim:
-          claimName: ethereum2-prysm
-        name: ethereum2-prysm
-      - name: ethereum2-script-prysm
+          claimName: ethereum2-prysm-mainnet
+        name: ethereum2-prysm-mainnet
+      - name: ethereum2-script-prysm-mainnet
         configMap:
-          name: ethereum2-script-prysm
+          name: ethereum2-script-prysm-mainnet
       tolerations:
       - effect: NoSchedule
         key: kubernetes.io/role
@@ -291,7 +291,7 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      name: ethereum2-prysm
+      name: ethereum2-prysm-mainnet
     spec:
       accessModes:
       - ReadWriteOnce

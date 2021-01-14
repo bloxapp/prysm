@@ -14,7 +14,7 @@ spec:
     - destination:
         host: ethereum2-prysm-mainnet
         port:
-          number: 3500
+          number: 13500
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
@@ -47,7 +47,7 @@ spec:
     - destination:
         host: ethereum2-prysm-grpc-mainnet
         port:
-          number: 4000
+          number: 14000
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
@@ -96,7 +96,7 @@ spec:
     - destination:
         host: ethereum2-prysm-grpc-mainnet
         port:
-          number: 4000
+          number: 14000
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
@@ -162,7 +162,7 @@ spec:
   ports:
   - name: grpc
     protocol: TCP
-    port: 4000
+    port: 14000
   sessionAffinity: ClientIP
   sessionAffinityConfig:
     clientIP:
@@ -179,22 +179,22 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 3500
+    - port: 13500
       protocol: TCP
-      targetPort: 3500
-      name: ext-3500
-    - port: 4000
-      protocol: TCP
-      targetPort: 4000
-      name: ext-4000
-    - port: 6668
-      protocol: TCP
-      targetPort: 6668
-      name: ext-6668
+      targetPort: 13500
+      name: ext-13500
     - port: 14000
       protocol: TCP
       targetPort: 14000
       name: ext-14000
+    - port: 16668
+      protocol: TCP
+      targetPort: 16668
+      name: ext-16668
+    - port: 15000
+      protocol: TCP
+      targetPort: 15000
+      name: ext-15000
   selector:
     application: ethereum2-prysm-mainnet
   sessionAffinity: ClientIP
@@ -243,18 +243,18 @@ spec:
         image: REPLACE_DOCKER_REPO:REPLACE_IMAGETAG
         imagePullPolicy: Always
         ports:
-        - containerPort: 3500
-          name: ext-3500
-        - containerPort: 4000
-          name: ext-4000
-        - containerPort: 6668
-          name: ext-6668
+        - containerPort: 13500
+          name: ext-13500
         - containerPort: 14000
-          hostPort: 14000
           name: ext-14000
-          protocol: TCP
+        - containerPort: 16668
+          name: ext-16668
         - containerPort: 15000
           hostPort: 15000
+          name: ext-15000
+          protocol: TCP
+        - containerPort: 16000
+          hostPort: 16000
           name: discv5
           protocol: UDP
         volumeMounts:

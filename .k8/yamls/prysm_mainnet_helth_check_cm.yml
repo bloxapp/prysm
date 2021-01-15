@@ -6,10 +6,10 @@ metadata:
 data:
   sync-status.sh: |
     #!/bin/bash
-    curl -s -X GET "http://localhost:13500/eth/v1alpha1/node/syncing" -H "accept: application/json" -o eth2-sync-status.txt
-    export ETH2_SYNC=$(jq -r ".syncing" eth2-sync-status.txt)
+    curl -s -X GET "http://localhost:13500/eth/v1alpha1/node/syncing" -H "accept: application/json" -o eth2-mainnet-sync-status.txt
+    export ETH2_SYNC=$(jq -r ".syncing" eth2-mainnet-sync-status.txt)
     export VAR2=false
-    rm -f eth2-sync-status.txt
+    rm -f eth2-mainnet-sync-status.txt
 
     if [ $ETH2_SYNC = $VAR2 ]
         then

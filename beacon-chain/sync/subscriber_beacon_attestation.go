@@ -2,9 +2,7 @@ package sync
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
@@ -13,12 +11,11 @@ import (
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/feed"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/feed/operation"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/helpers"
-	"github.com/prysmaticlabs/prysm/shared/attestationutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/sliceutil"
 )
 
-func (s *Service) committeeIndexBeaconAttestationSubscriber(ctx context.Context, msg proto.Message) error {
+func (s *Service) committeeIndexBeaconAttestationSubscriber(_ context.Context, msg proto.Message) error {
 	a, ok := msg.(*eth.Attestation)
 	if !ok {
 		return fmt.Errorf("message was not type *eth.Attestation, type=%T", msg)
@@ -46,27 +43,7 @@ func (s *Service) committeeIndexBeaconAttestationSubscriber(ctx context.Context,
 		},
 	})
 
-	// for testing only
-	s.logWireAttestationsForTesting(ctx, a)
-
 	return s.attPool.SaveUnaggregatedAttestation(a)
-}
-
-func (s *Service) logWireAttestationsForTesting(ctx context.Context, att *eth.Attestation) {
-	state, err := s.chain.AttestationPreState(ctx, att)
-	if err != nil {
-		log.WithError(err).Error("committeeIndexBeaconAttestationSubscriber: could not fetch pre attestation state")
-	}
-	committee, err := helpers.BeaconCommitteeFromState(state, att.Data.Slot, att.Data.CommitteeIndex)
-	if err != nil {
-		log.WithError(err).Error("committeeIndexBeaconAttestationSubscriber: could not fetch committee")
-	}
-	indexedAtt := attestationutil.ConvertToIndexed(ctx, att, committee)
-	attRaw, err := json.Marshal(indexedAtt)
-	if err != nil {
-		log.WithError(err).Error("committeeIndexBeaconAttestationSubscriber: failed to marshal attestation")
-	}
-	logrus.WithField("indexedAttRaw", string(attRaw)).Info("committeeIndexBeaconAttestationSubscriber: got attestation object")
 }
 
 func (s *Service) persistentSubnetIndices() []uint64 {

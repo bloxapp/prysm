@@ -21,7 +21,7 @@ Build stage Docker image:
   tags:
     - blox-infra-stage 
   script:
-    - docker build --no-cache -t $IMAGE_NAME:$CI_BUILD_REF -f Dockerfile .
+    - docker build --build-arg HTTP_WEB3_PROVIDER=$STAGE_PYRMONT_HTTP_WEB3_PROVIDER --build-arg PRYSM_NETWORK=$STAGE_PYRMONT_PRYSM_NETWORK --build-arg P2P_HOST_DNS=$STAGE_PYRMONT_P2P_HOST_DNS --no-cache -t $IMAGE_NAME:$CI_BUILD_REF -f Dockerfile .
     - DOCKER_LOGIN_TO_INFRA_STAGE_REPO=`$ECRLOGIN_INFRA_STAGE`
     - docker tag $IMAGE_NAME:$CI_BUILD_REF $DOCKER_REPO_INFRA_STAGE:$CI_BUILD_REF
     - $DOCKER_LOGIN_TO_INFRA_STAGE_REPO && docker push $DOCKER_REPO_INFRA_STAGE:$CI_BUILD_REF

@@ -23,7 +23,7 @@ variables:
 
 
 #blox-infra-stage Pyrmont
-Build stage Docker image:
+Build stage Pyrmont Docker image:
   stage: build
   tags:
     - blox-infra-stage 
@@ -35,7 +35,7 @@ Build stage Docker image:
   only:
     - stage
 
-Deploy to blox-infra-stage cluster:
+Deploy Pyrmont to blox-infra-stage cluster:
   stage: deploy
   tags:
     - blox-infra-stage
@@ -51,7 +51,7 @@ Deploy to blox-infra-stage cluster:
 
 
 #blox-infra-stage Mainnet
-Build stage Docker image:
+Build stage Mainnet Docker image:
   stage: build
   tags:
     - blox-infra-stage
@@ -63,7 +63,7 @@ Build stage Docker image:
   only:
     - stage-mainnet
 
-Deploy to blox-infra-stage cluster:
+Deploy Mainnet to blox-infra-stage cluster:
   stage: deploy
   tags:
     - blox-infra-stage
@@ -79,7 +79,7 @@ Deploy to blox-infra-stage cluster:
 
 
 #blox-infra-prod Pyrmont
-Build prod Docker image:
+Build prod Pyrmont Docker image:
   stage: build
   tags:
     - blox-infra-prod
@@ -91,7 +91,7 @@ Build prod Docker image:
   only:
     - prod-pyrmont
 
-Deploy to blox-infra-prod cluster:
+Deploy Pyrmont to blox-infra-prod cluster:
   stage: deploy
   tags:
     - blox-infra-prod
@@ -107,7 +107,7 @@ Deploy to blox-infra-prod cluster:
 
 
 ###blox-infra-prod Mainnet
-Build prod Docker image:
+Build prod Mainnet Docker image:
   stage: build
   tags:
     - blox-infra-prod
@@ -119,7 +119,7 @@ Build prod Docker image:
   only:
     - prod-mainnet
 
-Deploy to blox-infra-prod cluster:
+Deploy Mainnet to blox-infra-prod cluster:
   stage: deploy
   tags:
     - blox-infra-prod

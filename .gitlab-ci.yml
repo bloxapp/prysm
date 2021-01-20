@@ -7,28 +7,92 @@ variables:
   #GLOBAL
   IMAGE_NAME: prysm-beacon-node
 
+  #STAGE
+  ACCOUNT_ID_INFRA_STAGE: 121827225315
+  AWS_REGION_INFRA_STAGE: "us-west-2"
+  DOCKER_REPO_INFRA_STAGE: $ACCOUNT_ID_INFRA_STAGE.dkr.ecr.$AWS_REGION_INFRA_STAGE.amazonaws.com/$IMAGE_NAME
+  APP_REPLICAS_INFRA_STAGE: "1"
+  ECRLOGIN_INFRA_STAGE: "aws ecr get-login --registry-ids $ACCOUNT_ID_INFRA_STAGE --region $AWS_REGION_INFRA_STAGE --no-include-email"
+  STAGE_HEALTH_CHECK_IMAGE: 121827225315.dkr.ecr.us-west-2.amazonaws.com/infra-stage-repo:ubuntu20
+
   #PRODUCTION
   ACCOUNT_ID_INFRA_PROD: 764289642555
   AWS_REGION_INFRA_PROD: "us-west-2"
-  DOCKER_REPO_INFRA_PROD: $ACCOUNT_ID_INFRA_PROD.dkr.ecr.$AWS_REGION_INFRA_PROD.amazonaws.com/$IMAGE_NAME
+  DOCKER_REPO_INFRA_PROD: $ACCOUNT_ID_INFRA_PROD.dkr.ecr.$AWS_REGION_INFRA_STAGE.amazonaws.com/$IMAGE_NAME
   APP_REPLICAS_INFRA_PROD: "1"
   ECRLOGIN_INFRA_PROD: "aws ecr get-login --registry-ids $ACCOUNT_ID_INFRA_PROD --region $AWS_REGION_INFRA_PROD --no-include-email"
+  PROD_HEALTH_CHECK_IMAGE: 764289642555.dkr.ecr.us-west-2.amazonaws.com/infra-prod-repo:ubuntu20
+
+#blox-infra-stage Pyrmont
+Build stage Pyrmont Docker image:
+  stage: build
+  tags:
+    - blox-infra-stage 
+  script:
+    - docker build --build-arg HTTP_WEB3_PROVIDER=$STAGE_PYRMONT_HTTP_WEB3_PROVIDER --build-arg PRYSM_NETWORK=$STAGE_PYRMONT_PRYSM_NETWORK --build-arg P2P_HOST_DNS=$STAGE_PYRMONT_P2P_HOST_DNS --build-arg RPC_PORT=$STAGE_PYRMONT_RPC_PORT --build-arg GRPC_GATEWAY_PORT=$STAGE_PYRMONT_GRPC_GATEWAY_PORT --build-arg MONITORING_PORT=$STAGE_PYRMONT_MONITORING_PORT --build-arg P2P_TCP_PORT=$STAGE_PYRMONT_P2P_TCP_PORT --build-arg P2P_UDP_PORT=$STAGE_PYRMONT_P2P_UDP_PORT  --no-cache -t $IMAGE_NAME:$CI_BUILD_REF -f Dockerfile .
+    - DOCKER_LOGIN_TO_INFRA_STAGE_REPO=`$ECRLOGIN_INFRA_STAGE`
+    - docker tag $IMAGE_NAME:$CI_BUILD_REF $DOCKER_REPO_INFRA_STAGE:$CI_BUILD_REF
+    - $DOCKER_LOGIN_TO_INFRA_STAGE_REPO && docker push $DOCKER_REPO_INFRA_STAGE:$CI_BUILD_REF
+  only:
+    - stage
+
+Deploy Pyrmont to blox-infra-stage cluster:
+  stage: deploy
+  tags:
+    - blox-infra-stage
+  script:
+    - apk add bash
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl
+    - chmod +x ./kubectl
+    - mv ./kubectl /usr/bin/kubectl
+    - export K8S_API_VERSION=$INFRA_STAGE_K8_API_VERSION
+    - .k8/scripts/deploy-yamls-on-k8s-pyrmont.sh $DOCKER_REPO_INFRA_STAGE $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_STAGE blox-infra-stage kubernetes-admin@blox-infra stage.bloxinfra.com $K8S_API_VERSION $STAGE_HEALTH_CHECK_IMAGE
+  only:
+    - stage
 
 
-#blox-infra-prod
-Build prod Docker image:
+#blox-infra-stage Mainnet
+Build stage Mainnet Docker image:
+  stage: build
+  tags:
+    - blox-infra-stage
+  script:
+    - docker build --build-arg HTTP_WEB3_PROVIDER=$STAGE_MAINNET_HTTP_WEB3_PROVIDER --build-arg PRYSM_NETWORK=$STAGE_MAINNET_PRYSM_NETWORK --build-arg P2P_HOST_DNS=$STAGE_MAINNET_P2P_HOST_DNS --build-arg RPC_PORT=$STAGE_MAINNET_RPC_PORT --build-arg GRPC_GATEWAY_PORT=$STAGE_MAINNET_GRPC_GATEWAY_PORT --build-arg MONITORING_PORT=$STAGE_MAINNET_MONITORING_PORT --build-arg P2P_TCP_PORT=$STAGE_MAINNET_P2P_TCP_PORT --build-arg P2P_UDP_PORT=$STAGE_MAINNET_P2P_UDP_PORT --no-cache -t $IMAGE_NAME:$CI_BUILD_REF -f Dockerfile .
+    - DOCKER_LOGIN_TO_INFRA_STAGE_REPO=`$ECRLOGIN_INFRA_STAGE`
+    - docker tag $IMAGE_NAME:$CI_BUILD_REF $DOCKER_REPO_INFRA_STAGE:$CI_BUILD_REF
+    - $DOCKER_LOGIN_TO_INFRA_STAGE_REPO && docker push $DOCKER_REPO_INFRA_STAGE:$CI_BUILD_REF
+  only:
+    - stage-mainnet
+
+Deploy Mainnet to blox-infra-stage cluster:
+  stage: deploy
+  tags:
+    - blox-infra-stage
+  script:
+    - apk add bash
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl
+    - chmod +x ./kubectl
+    - mv ./kubectl /usr/bin/kubectl
+    - export K8S_API_VERSION=$INFRA_STAGE_K8_API_VERSION
+    - .k8/scripts/deploy-yamls-on-k8s-mainnet.sh $DOCKER_REPO_INFRA_STAGE $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_STAGE blox-infra-stage kubernetes-admin@blox-infra stage.bloxinfra.com $K8S_API_VERSION $STAGE_HEALTH_CHECK_IMAGE
+  only:
+    - stage-mainnet
+
+
+#blox-infra-prod Pyrmont
+Build prod Pyrmont Docker image:
   stage: build
   tags:
     - blox-infra-prod
   script:
-    - docker build -t $IMAGE_NAME:$CI_BUILD_REF -f Dockerfile .
+    - docker build --build-arg HTTP_WEB3_PROVIDER=$PROD_PYRMONT_HTTP_WEB3_PROVIDER --build-arg PRYSM_NETWORK=$PROD_PYRMONT_PRYSM_NETWORK --build-arg P2P_HOST_DNS=$PROD_PYRMONT_P2P_HOST_DNS --build-arg RPC_PORT=$PROD_PYRMONT_RPC_PORT --build-arg GRPC_GATEWAY_PORT=$PROD_PYRMONT_GRPC_GATEWAY_PORT --build-arg MONITORING_PORT=$PROD_PYRMONT_MONITORING_PORT --build-arg P2P_TCP_PORT=$PROD_PYRMONT_P2P_TCP_PORT --build-arg P2P_UDP_PORT=$PROD_PYRMONT_P2P_UDP_PORT  --no-cache -t $IMAGE_NAME:$CI_BUILD_REF -f Dockerfile .
     - DOCKER_LOGIN_TO_INFRA_PROD_REPO=`$ECRLOGIN_INFRA_PROD`
     - docker tag $IMAGE_NAME:$CI_BUILD_REF $DOCKER_REPO_INFRA_PROD:$CI_BUILD_REF
     - $DOCKER_LOGIN_TO_INFRA_PROD_REPO && docker push $DOCKER_REPO_INFRA_PROD:$CI_BUILD_REF
   only:
     - prod-pyrmont
 
-Deploy to blox-infra-prod cluster:
+Deploy Pyrmont to blox-infra-prod cluster:
   stage: deploy
   tags:
     - blox-infra-prod
@@ -38,6 +102,34 @@ Deploy to blox-infra-prod cluster:
     - chmod +x ./kubectl
     - mv ./kubectl /usr/bin/kubectl
     - export K8S_API_VERSION=$INFRA_PROD_K8_API_VERSION
-    - .k8/scripts/deploy-yamls-on-k8s.sh $DOCKER_REPO_INFRA_PROD $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_PROD blox-infra-prod kubernetes-admin@blox-infra-prod bloxinfra.com $K8S_API_VERSION
+    - .k8/scripts/deploy-yamls-on-k8s-pyrmont.sh $DOCKER_REPO_INFRA_PROD $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_PROD blox-infra-prod kubernetes-admin@blox-infra-prod bloxinfra.com $K8S_API_VERSION $PROD_HEALTH_CHECK_IMAGE
   only:
     - prod-pyrmont
+
+
+###blox-infra-prod Mainnet
+Build prod Mainnet Docker image:
+  stage: build
+  tags:
+    - blox-infra-prod
+  script:
+    - docker build --build-arg HTTP_WEB3_PROVIDER=$PROD_MAINNET_HTTP_WEB3_PROVIDER --build-arg PRYSM_NETWORK=$PROD_MAINNET_PRYSM_NETWORK --build-arg P2P_HOST_DNS=$PROD_MAINNET_P2P_HOST_DNS --build-arg RPC_PORT=$PROD_MAINNET_RPC_PORT --build-arg GRPC_GATEWAY_PORT=$PROD_MAINNET_GRPC_GATEWAY_PORT --build-arg MONITORING_PORT=$PROD_MAINNET_MONITORING_PORT --build-arg P2P_TCP_PORT=$PROD_MAINNET_P2P_TCP_PORT --build-arg P2P_UDP_PORT=$PROD_MAINNET_P2P_UDP_PORT --no-cache -t $IMAGE_NAME:$CI_BUILD_REF -f Dockerfile .
+    - DOCKER_LOGIN_TO_INFRA_PROD_REPO=`$ECRLOGIN_INFRA_PROD`
+    - docker tag $IMAGE_NAME:$CI_BUILD_REF $DOCKER_REPO_INFRA_PROD:$CI_BUILD_REF
+    - $DOCKER_LOGIN_TO_INFRA_PROD_REPO && docker push $DOCKER_REPO_INFRA_PROD:$CI_BUILD_REF
+  only:
+    - prod-mainnet
+
+Deploy Mainnet to blox-infra-prod cluster:
+  stage: deploy
+  tags:
+    - blox-infra-prod
+  script:
+    - apk add bash
+    - curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl
+    - chmod +x ./kubectl
+    - mv ./kubectl /usr/bin/kubectl
+    - export K8S_API_VERSION=$INFRA_PROD_K8_API_VERSION
+    - .k8/scripts/deploy-yamls-on-k8s-mainnet.sh $DOCKER_REPO_INFRA_PROD $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_PROD blox-infra-prod kubernetes-admin@blox-infra-prod bloxinfra.com $K8S_API_VERSION $PROD_HEALTH_CHECK_IMAGE
+  only:
+    - prod-mainnet

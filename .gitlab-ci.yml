@@ -13,6 +13,7 @@ variables:
   DOCKER_REPO_INFRA_STAGE: $ACCOUNT_ID_INFRA_STAGE.dkr.ecr.$AWS_REGION_INFRA_STAGE.amazonaws.com/$IMAGE_NAME
   APP_REPLICAS_INFRA_STAGE: "1"
   ECRLOGIN_INFRA_STAGE: "aws ecr get-login --registry-ids $ACCOUNT_ID_INFRA_STAGE --region $AWS_REGION_INFRA_STAGE --no-include-email"
+  STAGE_HEALTH_CHECK_IMAGE: 121827225315.dkr.ecr.us-west-2.amazonaws.com/infra-stage-repo:ubuntu20
 
   #PRODUCTION
   ACCOUNT_ID_INFRA_PROD: 764289642555
@@ -20,7 +21,7 @@ variables:
   DOCKER_REPO_INFRA_PROD: $ACCOUNT_ID_INFRA_PROD.dkr.ecr.$AWS_REGION_INFRA_STAGE.amazonaws.com/$IMAGE_NAME
   APP_REPLICAS_INFRA_PROD: "1"
   ECRLOGIN_INFRA_PROD: "aws ecr get-login --registry-ids $ACCOUNT_ID_INFRA_PROD --region $AWS_REGION_INFRA_PROD --no-include-email"
-
+  PROD_HEALTH_CHECK_IMAGE: 764289642555.dkr.ecr.us-west-2.amazonaws.com/infra-prod-repo:ubuntu20
 
 #blox-infra-stage Pyrmont
 Build stage Pyrmont Docker image:
@@ -45,7 +46,7 @@ Deploy Pyrmont to blox-infra-stage cluster:
     - chmod +x ./kubectl
     - mv ./kubectl /usr/bin/kubectl
     - export K8S_API_VERSION=$INFRA_STAGE_K8_API_VERSION
-    - .k8/scripts/deploy-yamls-on-k8s.sh $DOCKER_REPO_INFRA_STAGE $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_STAGE blox-infra-stage kubernetes-admin@blox-infra stage.bloxinfra.com $K8S_API_VERSION
+    - .k8/scripts/deploy-yamls-on-k8s-pyrmont.sh $DOCKER_REPO_INFRA_STAGE $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_STAGE blox-infra-stage kubernetes-admin@blox-infra stage.bloxinfra.com $K8S_API_VERSION $STAGE_HEALTH_CHECK_IMAGE
   only:
     - stage
 
@@ -73,7 +74,7 @@ Deploy Mainnet to blox-infra-stage cluster:
     - chmod +x ./kubectl
     - mv ./kubectl /usr/bin/kubectl
     - export K8S_API_VERSION=$INFRA_STAGE_K8_API_VERSION
-    - .k8/scripts/deploy-yamls-on-k8s.sh $DOCKER_REPO_INFRA_STAGE $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_STAGE blox-infra-stage kubernetes-admin@blox-infra stage.bloxinfra.com $K8S_API_VERSION
+    - .k8/scripts/deploy-yamls-on-k8s-mainnet.sh $DOCKER_REPO_INFRA_STAGE $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_STAGE blox-infra-stage kubernetes-admin@blox-infra stage.bloxinfra.com $K8S_API_VERSION $STAGE_HEALTH_CHECK_IMAGE
   only:
     - stage-mainnet
 
@@ -101,7 +102,7 @@ Deploy Pyrmont to blox-infra-prod cluster:
     - chmod +x ./kubectl
     - mv ./kubectl /usr/bin/kubectl
     - export K8S_API_VERSION=$INFRA_PROD_K8_API_VERSION
-    - .k8/scripts/deploy-yamls-on-k8s.sh $DOCKER_REPO_INFRA_PROD $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_PROD blox-infra-prod kubernetes-admin@blox-infra-prod bloxinfra.com $K8S_API_VERSION
+    - .k8/scripts/deploy-yamls-on-k8s-pyrmont.sh $DOCKER_REPO_INFRA_PROD $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_PROD blox-infra-prod kubernetes-admin@blox-infra-prod bloxinfra.com $K8S_API_VERSION $PROD_HEALTH_CHECK_IMAGE
   only:
     - prod-pyrmont
 
@@ -129,6 +130,6 @@ Deploy Mainnet to blox-infra-prod cluster:
     - chmod +x ./kubectl
     - mv ./kubectl /usr/bin/kubectl
     - export K8S_API_VERSION=$INFRA_PROD_K8_API_VERSION
-    - .k8/scripts/deploy-yamls-on-k8s.sh $DOCKER_REPO_INFRA_PROD $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_PROD blox-infra-prod kubernetes-admin@blox-infra-prod bloxinfra.com $K8S_API_VERSION
+    - .k8/scripts/deploy-yamls-on-k8s-mainnet.sh $DOCKER_REPO_INFRA_PROD $CI_BUILD_REF blockchain $APP_REPLICAS_INFRA_PROD blox-infra-prod kubernetes-admin@blox-infra-prod bloxinfra.com $K8S_API_VERSION $PROD_HEALTH_CHECK_IMAGE
   only:
     - prod-mainnet

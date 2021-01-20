@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"reflect"
 	"strings"
@@ -59,11 +60,7 @@ func (s *Service) validateCommitteeIndexBeaconAttestation(ctx context.Context, p
 		return pubsub.ValidationReject
 	}
 
-	if att.Data == nil {
-		return pubsub.ValidationReject
-	}
-	// Attestation aggregation bits must exist.
-	if att.AggregationBits == nil {
+	if err := helpers.ValidateNilAttestation(att); err != nil {
 		return pubsub.ValidationReject
 	}
 
@@ -107,7 +104,7 @@ func (s *Service) validateCommitteeIndexBeaconAttestation(ctx context.Context, p
 
 	preState, err := s.chain.AttestationPreState(ctx, att)
 	if err != nil {
-		log.WithError(err).Error("Could not to retrieve pre state")
+		log.WithError(err).Infof("attestation with sig %s failed on retrieve pre state", hex.EncodeToString(att.Signature))
 		traceutil.AnnotateError(span, err)
 		return pubsub.ValidationIgnore
 	}
@@ -214,7 +211,7 @@ func (s *Service) setSeenCommitteeIndicesSlot(slot, committeeID uint64, aggregat
 // hasBlockAndState returns true if the beacon node knows about a block and associated state in the
 // database or cache.
 func (s *Service) hasBlockAndState(ctx context.Context, blockRoot [32]byte) bool {
-	hasStateSummary := s.stateSummaryCache.Has(blockRoot) || s.db.HasStateSummary(ctx, blockRoot)
+	hasStateSummary := s.db.HasStateSummary(ctx, blockRoot)
 	hasState := hasStateSummary || s.db.HasState(ctx, blockRoot)
 	hasBlock := s.chain.HasInitSyncBlock(blockRoot) || s.db.HasBlock(ctx, blockRoot)
 	return hasState && hasBlock

@@ -261,7 +261,7 @@ spec:
         - mountPath: "/data"
           name: ethereum2-prysm-mainnet
       - name: ubuntu
-        image: 764289642555.dkr.ecr.us-west-2.amazonaws.com/infra-prod-repo:ubuntu20
+        image: REPLACE_HEALTH_IMAGE
         imagePullPolicy: Always
         args: [bash, -c, sleep infinity]
         volumeMounts:

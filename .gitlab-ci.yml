@@ -1,6 +1,10 @@
 stages:
   - build
   - deploy
+  - build-v2
+  - deploy-v2
+  - build-v3
+  - deploy-v3
 
 variables:
 
@@ -54,7 +58,7 @@ Deploy Pyrmont to blox-infra-stage cluster:
 
 #blox-infra-stage Pyrmont v2
 Build stage Pyrmont v2 Docker image:
-  stage: build
+  stage: build-v2
   tags:
     - blox-infra-stage
   script:
@@ -66,7 +70,7 @@ Build stage Pyrmont v2 Docker image:
     - stage
 
 Deploy Pyrmont v2 to blox-infra-stage cluster:
-  stage: deploy
+  stage: deploy-v2
   tags:
     - blox-infra-stage
   script:
@@ -83,7 +87,7 @@ Deploy Pyrmont v2 to blox-infra-stage cluster:
 
 #blox-infra-stage Pyrmont v3
 Build stage Pyrmont v3 Docker image:
-  stage: build
+  stage: build-v3
   tags:
     - blox-infra-stage
   script:
@@ -95,7 +99,7 @@ Build stage Pyrmont v3 Docker image:
     - stage
 
 Deploy Pyrmont v3 to blox-infra-stage cluster:
-  stage: deploy
+  stage: deploy-v3
   tags:
     - blox-infra-stage
   script:

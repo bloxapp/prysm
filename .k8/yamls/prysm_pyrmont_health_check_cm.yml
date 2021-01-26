@@ -13,11 +13,31 @@ data:
     export VAR2=false
     rm -f eth2-sync-status.txt
 
-    if [ $ETH2_SYNC = $VAR2 ] || [ $GRPC_STATUS = $VAR1 ]
+    if [ $ETH2_SYNC = $VAR2 ]
         then
          echo "ETH2 node is in sync"
          exit 0
     else
          echo "ETH2 node not in sync" >&2
+         exit 1
+    fi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ethereum2-script-prysm-grpc
+  namespace: blockchain
+data:
+  grpc-status.sh: |
+    #!/bin/bash
+    export GRPC_STATUS=$(grpcurl -max-time 3 -plaintext -H "x-user: ricky" localhost:4000 list  |grep ethereum.beacon.rpc.v1.Health)
+    export GRPC_VAR1=ethereum.beacon.rpc.v1.Health
+
+    if [ $GRPC_STATUS = $GRPC_VAR1 ]
+        then
+         echo "ETH2 grpc is ok"
+         exit 0
+    else
+         echo "ETH2 grpc it not ok" >&2
          exit 1
     fi

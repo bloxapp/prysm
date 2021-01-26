@@ -268,6 +268,16 @@ spec:
         - name: ethereum2-script-prysm
           mountPath: /root/sync-status.sh
           subPath: sync-status.sh
+        - name: ethereum2-script-prysm-grpc
+          mountPath: /root/grpc-status.sh
+          subPath: grpc-status.sh
+        livenessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - /root/grpc-status.sh
+          initialDelaySeconds: 10
+          periodSeconds: 15
         readinessProbe:
           exec:
             command:
@@ -282,6 +292,9 @@ spec:
       - name: ethereum2-script-prysm
         configMap:
           name: ethereum2-script-prysm
+      - name: ethereum2-script-prysm-grpc
+        configMap:
+          name: ethereum2-script-prysm-grpc
       tolerations:
       - effect: NoSchedule
         key: kubernetes.io/role

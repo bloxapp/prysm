@@ -8,7 +8,7 @@ data:
     #!/bin/bash
     curl -s -X GET "http://localhost:3500/eth/v1alpha1/node/syncing" -H "accept: application/json" -o eth2-sync-status.txt
     export ETH2_SYNC=$(jq -r ".syncing" eth2-sync-status.txt)
-    export GRPC_STATUS=$(grpcurl -v  -plaintext  -H "x-user: ricky"  localhost:4000 list  |grep ethereum.beacon.rpc.v1.Health)
+    export GRPC_STATUS=$(grpcurl -max-time 3  -plaintext  -H "x-user: ricky"  localhost:4000 list  |grep ethereum.beacon.rpc.v1.Health)
     export VAR1=ethereum.beacon.rpc.v1.Health
     export VAR2=false
     rm -f eth2-sync-status.txt

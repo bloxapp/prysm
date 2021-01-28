@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ethereum2-script-prysm-mainnet
+  name: ethereum2-script-prysm-mainnet-v2
   namespace: blockchain
 data:
   sync-status.sh: |
     #!/bin/bash
-    curl -s -X GET "http://localhost:13500/eth/v1alpha1/node/syncing" -H "accept: application/json" -o eth2-mainnet-sync-status.txt
+    curl -s -X GET "http://localhost:13502/eth/v1alpha1/node/syncing" -H "accept: application/json" -o eth2-mainnet-sync-status.txt
     export ETH2_SYNC=$(jq -r ".syncing" eth2-mainnet-sync-status.txt)
     export VAR2=false
     rm -f eth2-mainnet-sync-status.txt
@@ -23,12 +23,12 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ethereum2-script-prysm-mainnet-grpc
+  name: ethereum2-script-prysm-mainnet-grpc-v2
   namespace: blockchain
 data:
   grpc-status.sh: |
     #!/bin/bash
-    export GRPC_STATUS=$(grpcurl -max-time 3 -plaintext -H "x-user: ricky" localhost:14000 list  |grep ethereum.beacon.rpc.v1.Health)
+    export GRPC_STATUS=$(grpcurl -max-time 3 -plaintext -H "x-user: ricky" localhost:14002 list  |grep ethereum.beacon.rpc.v1.Health)
     export GRPC_VAR1=ethereum.beacon.rpc.v1.Health
 
     if [ $GRPC_STATUS = $GRPC_VAR1 ]
@@ -39,4 +39,3 @@ data:
          echo "ETH2 grpc it not ok" >&2
          exit 1
     fi
-

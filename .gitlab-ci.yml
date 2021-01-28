@@ -181,8 +181,8 @@ Build stage Mainnet v3 Docker image:
   only:
     - stage-mainnet
 
-Deploy Mainnet v2 to blox-infra-stage cluster:
-  stage: deploy-v2
+Deploy Mainnet v3 to blox-infra-stage cluster:
+  stage: deploy-v3
   tags:
     - blox-infra-stage
   script:
@@ -266,7 +266,7 @@ Build prod Pyrmont v3 Docker image:
   only:
     - prod-pyrmont
 
-Deploy Pyrmont v2 to blox-infra-prod cluster:
+Deploy Pyrmont v3 to blox-infra-prod cluster:
   stage: deploy-v3
   tags:
     - blox-infra-prod

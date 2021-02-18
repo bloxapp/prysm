@@ -76,7 +76,7 @@ func (s *Service) validateCommitteeIndexBeaconAttestation(ctx context.Context, p
 	}
 
 	// Verify this the first attestation received for the participating validator for the slot.
-	if s.hasSeenCommitteeIndicesSlot(att.Data.Slot, att.Data.CommitteeIndex, att.AggregationBits) {
+	if s.hasSeenCommitteeIndicesSlot(uint64(att.Data.Slot), att.Data.CommitteeIndex, att.AggregationBits) {
 		log.Infof("attestation with sig %s failed on hasSeenCommitteeIndicesSlot", hex.EncodeToString(att.Signature))
 		return pubsub.ValidationIgnore
 	}
@@ -129,7 +129,7 @@ func (s *Service) validateCommitteeIndexBeaconAttestation(ctx context.Context, p
 		return validationRes
 	}
 
-	s.setSeenCommitteeIndicesSlot(att.Data.Slot, att.Data.CommitteeIndex, att.AggregationBits)
+	s.setSeenCommitteeIndicesSlot(uint64(att.Data.Slot), att.Data.CommitteeIndex, att.AggregationBits)
 
 	msg.ValidatorData = att
 

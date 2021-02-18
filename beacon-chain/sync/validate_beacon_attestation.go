@@ -9,6 +9,7 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/peer"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	types "github.com/prysmaticlabs/eth2-types"
 	eth "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/blocks"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/helpers"
@@ -70,7 +71,7 @@ func (s *Service) validateCommitteeIndexBeaconAttestation(ctx context.Context, p
 		traceutil.AnnotateError(span, err)
 		return pubsub.ValidationIgnore
 	}
-	if helpers.SlotToEpoch(att.Data.Slot) != att.Data.Target.Epoch {
+	if err := helpers.ValidateSlotTargetEpoch(att.Data); err != nil {
 		log.Infof("attestation with sig %s failed on data.slot not in target epoch", hex.EncodeToString(att.Signature))
 		return pubsub.ValidationReject
 	}

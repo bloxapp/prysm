@@ -286,7 +286,7 @@ spec:
             - /bin/bash
             - /root/grpc-status.sh
           initialDelaySeconds: 120
-          periodSeconds: 15
+          periodSeconds: 1
         readinessProbe:
           exec:
             command:

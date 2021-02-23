@@ -30,7 +30,7 @@ data:
     #!/bin/bash
     cd /root
     export CURRENT_EPOCH=`echo "scale=0; ($(date -u +%s) - 1606824023)/60/6.4" | bc`
-    export GRPC_STATUS=$(grpcurl  -plaintext  -max-time 5 -proto http.proto -proto annotations.proto -proto validator.proto  -d "{\"epoch\": \"$CURRENT_EPOCH\",\"publicKeys\": [\"omAOWwfAil4hyUXxIBXzDMeyPu7kuiF3xqdcYKjsf1emF4fzYhIfoYoMMpxPyo6+\"]}" localhost:14002 ethereum.eth.v1alpha1.BeaconNodeValidator.GetDuties | jq -r '.currentEpochDuties[].status')
+    export GRPC_STATUS=$(grpcurl  -plaintext  -max-time 5 -proto http.proto -proto annotations.proto -proto validator.proto  -d "{\"epoch\": \"$CURRENT_EPOCH\",\"publicKeys\": [\"oPLdNHzwJ76JGpDQZh2z8JXrwBPcOSYaeyBu8GhatWZuf+WwNnPAIRj4gH6AU8Uu\"]}" localhost:14002 ethereum.eth.v1alpha1.BeaconNodeValidator.GetDuties | jq -r '.currentEpochDuties[].status')
     export GRPC_VAR1=ACTIVE
 
     if [ $GRPC_STATUS = $GRPC_VAR1 ]

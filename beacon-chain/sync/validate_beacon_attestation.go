@@ -66,15 +66,18 @@ func (s *Service) validateCommitteeIndexBeaconAttestation(ctx context.Context, p
 
 	// Attestation's slot is within ATTESTATION_PROPAGATION_SLOT_RANGE.
 	if err := helpers.ValidateAttestationTime(att.Data.Slot, s.chain.GenesisTime()); err != nil {
+		log.WithError(err).Infof("attestation with sig %s failed on ValidateAttestationTime", hex.EncodeToString(att.Signature))
 		traceutil.AnnotateError(span, err)
 		return pubsub.ValidationIgnore
 	}
-	if helpers.SlotToEpoch(att.Data.Slot) != att.Data.Target.Epoch {
+	if err := helpers.ValidateSlotTargetEpoch(att.Data); err != nil {
+		log.Infof("attestation with sig %s failed on data.slot not in target epoch", hex.EncodeToString(att.Signature))
 		return pubsub.ValidationReject
 	}
 
 	// Verify this the first attestation received for the participating validator for the slot.
-	if s.hasSeenCommitteeIndicesSlot(att.Data.Slot, att.Data.CommitteeIndex, att.AggregationBits) {
+	if s.hasSeenCommitteeIndicesSlot(uint64(att.Data.Slot), att.Data.CommitteeIndex, att.AggregationBits) {
+		log.Infof("attestation with sig %s failed on hasSeenCommitteeIndicesSlot", hex.EncodeToString(att.Signature))
 		return pubsub.ValidationIgnore
 	}
 
@@ -82,28 +85,33 @@ func (s *Service) validateCommitteeIndexBeaconAttestation(ctx context.Context, p
 	if s.hasBadBlock(bytesutil.ToBytes32(att.Data.BeaconBlockRoot)) ||
 		s.hasBadBlock(bytesutil.ToBytes32(att.Data.Target.Root)) ||
 		s.hasBadBlock(bytesutil.ToBytes32(att.Data.Source.Root)) {
+		log.Infof("attestation with sig %s failed on invalid block", hex.EncodeToString(att.Signature))
 		return pubsub.ValidationReject
 	}
 
 	// Verify the block being voted and the processed state is in DB and. The block should have passed validation if it's in the DB.
 	blockRoot := bytesutil.ToBytes32(att.Data.BeaconBlockRoot)
 	if !s.hasBlockAndState(ctx, blockRoot) {
+		log.Infof("attestation with sig %s failed on hasBlockAndState", hex.EncodeToString(att.Signature))
 		// A node doesn't have the block, it'll request from peer while saving the pending attestation to a queue.
 		s.savePendingAtt(&eth.SignedAggregateAttestationAndProof{Message: &eth.AggregateAttestationAndProof{Aggregate: att}})
 		return pubsub.ValidationIgnore
 	}
 
 	if err := s.chain.VerifyFinalizedConsistency(ctx, att.Data.BeaconBlockRoot); err != nil {
+		log.WithError(err).Infof("attestation with sig %s failed on VerifyFinalizedConsistency", hex.EncodeToString(att.Signature))
 		traceutil.AnnotateError(span, err)
 		return pubsub.ValidationReject
 	}
 	if err := s.chain.VerifyLmdFfgConsistency(ctx, att); err != nil {
+		log.WithError(err).Infof("attestation with sig %s failed on VerifyLmdFfgConsistency", hex.EncodeToString(att.Signature))
 		traceutil.AnnotateError(span, err)
 		return pubsub.ValidationReject
 	}
 
 	preState, err := s.chain.AttestationPreState(ctx, att)
 	if err != nil {
+		//log.WithError(err).Error("Could not to retrieve pre state")
 		log.WithError(err).Infof("attestation with sig %s failed on retrieve pre state", hex.EncodeToString(att.Signature))
 		traceutil.AnnotateError(span, err)
 		return pubsub.ValidationIgnore
@@ -111,15 +119,17 @@ func (s *Service) validateCommitteeIndexBeaconAttestation(ctx context.Context, p
 
 	validationRes := s.validateUnaggregatedAttTopic(ctx, att, preState, *originalTopic)
 	if validationRes != pubsub.ValidationAccept {
+		log.Infof("attestation with sig %s failed on validateUnaggregatedAttTopic", hex.EncodeToString(att.Signature))
 		return validationRes
 	}
 
 	validationRes = s.validateUnaggregatedAttWithState(ctx, att, preState)
 	if validationRes != pubsub.ValidationAccept {
+		log.Infof("attestation with sig %s failed on validateUnaggregatedAttWithState", hex.EncodeToString(att.Signature))
 		return validationRes
 	}
 
-	s.setSeenCommitteeIndicesSlot(att.Data.Slot, att.Data.CommitteeIndex, att.AggregationBits)
+	s.setSeenCommitteeIndicesSlot(uint64(att.Data.Slot), att.Data.CommitteeIndex, att.AggregationBits)
 
 	msg.ValidatorData = att
 

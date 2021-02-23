@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	types "github.com/prysmaticlabs/eth2-types"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/helpers"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
@@ -104,7 +105,7 @@ func (s *Service) processPendingAtts(ctx context.Context) error {
 							log.WithError(err).Debug("Could not save unaggregated attestation")
 							continue
 						}
-						s.setSeenCommitteeIndicesSlot(att.Aggregate.Data.Slot, att.Aggregate.Data.CommitteeIndex, att.Aggregate.AggregationBits)
+						s.setSeenCommitteeIndicesSlot(uint64(att.Aggregate.Data.Slot), att.Aggregate.Data.CommitteeIndex, att.Aggregate.AggregationBits)
 
 						valCount, err := helpers.ActiveValidatorCount(preState, helpers.SlotToEpoch(att.Aggregate.Data.Slot))
 						if err != nil {
@@ -169,7 +170,7 @@ func (s *Service) savePendingAtt(att *ethpb.SignedAggregateAttestationAndProof) 
 // If not valid, a node will remove it in the queue in place. The validity
 // check specifies the pending attestation could not fall one epoch behind
 // of the current slot.
-func (s *Service) validatePendingAtts(ctx context.Context, slot uint64) {
+func (s *Service) validatePendingAtts(ctx context.Context, slot types.Slot) {
 	ctx, span := trace.StartSpan(ctx, "validatePendingAtts")
 	defer span.End()
 

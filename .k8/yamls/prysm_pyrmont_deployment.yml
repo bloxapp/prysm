@@ -286,13 +286,13 @@ spec:
             - /bin/bash
             - /root/grpc-status.sh
           initialDelaySeconds: 120
-          periodSeconds: 1
+          periodSeconds: 15
         readinessProbe:
           exec:
             command:
             - /bin/bash
             - /root/sync-status.sh
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
           periodSeconds: 15
       volumes:
       - persistentVolumeClaim:

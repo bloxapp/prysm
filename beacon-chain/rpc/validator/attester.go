@@ -256,7 +256,7 @@ func (vs *Server) SubscribeCommitteeSubnets(ctx context.Context, req *ethpb.Comm
 			}
 			currEpoch = helpers.SlotToEpoch(req.Slots[i])
 		}
-		subnet := helpers.ComputeSubnetFromCommitteeAndSlot(currValsLen, req.CommitteeIds[i], req.Slots[i])
+		subnet := helpers.ComputeSubnetFromCommitteeAndSlot(currValsLen, types.CommitteeIndex(req.CommitteeIds[i]), req.Slots[i])
 
 		log.WithFields(logrus.Fields{
 			"slot":         req.Slots[i],

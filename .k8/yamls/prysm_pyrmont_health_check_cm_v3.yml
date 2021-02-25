@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ethereum2-script-prysm-v3
+  namespace: blockchain
+data:
+  sync-status.sh: |
+    #!/bin/bash
+    curl -s -X GET "http://localhost:3503/eth/v1alpha1/node/syncing" -H "accept: application/json" -o eth2-sync-status.txt
+    export ETH2_SYNC=$(jq -r ".syncing" eth2-sync-status.txt)
+    export GRPC_STATUS=$(grpcurl -max-time 3  -plaintext  -H "x-user: ricky"  localhost:4000 list  |grep ethereum.beacon.rpc.v1.Health)
+    export VAR1=ethereum.beacon.rpc.v1.Health
+    export VAR2=false
+    rm -f eth2-sync-status.txt
+
+    if [ $ETH2_SYNC = $VAR2 ]
+        then
+         echo "ETH2 node is in sync"
+         exit 0
+    else
+         echo "ETH2 node not in sync" >&2
+         exit 1
+    fi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ethereum2-script-prysm-grpc-v3
+  namespace: blockchain
+data:
+  grpc-status.sh: |
+    #!/bin/bash
+    cd /root
+    export CURRENT_EPOCH=`echo "scale=0; ($(date -u +%s) - 1605700807)/60/6.4" | bc`
+    export GRPC_STATUS=$(grpcurl  -plaintext  -max-time 5 -proto http.proto -proto annotations.proto -proto validator.proto  -d "{\"epoch\": \"$CURRENT_EPOCH\",\"publicKeys\": [\"omAOWwfAil4hyUXxIBXzDMeyPu7kuiF3xqdcYKjsf1emF4fzYhIfoYoMMpxPyo6+\"]}" localhost:4003 ethereum.eth.v1alpha1.BeaconNodeValidator.GetDuties | jq -r '.currentEpochDuties[].status')
+    export GRPC_VAR1=ACTIVE
+
+    if [ $GRPC_STATUS = $GRPC_VAR1 ]
+        then
+         echo "ETH2 grpc is ok"
+         exit 0
+    else
+         echo "ETH2 grpc it not ok" >&2
+         exit 1
+    fi

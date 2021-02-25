@@ -105,7 +105,7 @@ func (s *Service) processPendingAtts(ctx context.Context) error {
 							log.WithError(err).Debug("Could not save unaggregated attestation")
 							continue
 						}
-						s.setSeenCommitteeIndicesSlot(att.Aggregate.Data.Slot, att.Aggregate.Data.CommitteeIndex, att.Aggregate.AggregationBits)
+						s.setSeenCommitteeIndicesSlot(uint64(att.Aggregate.Data.Slot), att.Aggregate.Data.CommitteeIndex, att.Aggregate.AggregationBits)
 
 						valCount, err := helpers.ActiveValidatorCount(preState, helpers.SlotToEpoch(att.Aggregate.Data.Slot))
 						if err != nil {

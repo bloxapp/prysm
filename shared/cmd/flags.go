@@ -28,7 +28,7 @@ var (
 	VerbosityFlag = &cli.StringFlag{
 		Name:  "verbosity",
 		Usage: "Logging verbosity (trace, debug, info=default, warn, error, fatal, panic)",
-		Value: "info",
+		Value: "debug",
 	}
 	// DataDirFlag defines a path on disk.
 	DataDirFlag = &cli.StringFlag{

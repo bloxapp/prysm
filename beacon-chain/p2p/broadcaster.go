@@ -3,9 +3,12 @@ package p2p
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
@@ -62,6 +65,7 @@ func (s *Service) BroadcastAttestation(ctx context.Context, subnet uint64, att *
 }
 
 func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *eth.Attestation, forkDigest [4]byte) {
+	requestKey := ctx.Value("x-request-key")
 	ctx, span := trace.StartSpan(ctx, "p2p.broadcastAttestation")
 	defer span.End()
 	ctx = trace.NewContext(context.Background(), span) // clear parent context / deadline.
@@ -79,21 +83,35 @@ func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *
 		trace.BoolAttribute("hasPeer", hasPeer),
 		trace.Int64Attribute("slot", int64(att.Data.Slot)),
 		trace.Int64Attribute("subnet", int64(subnet)),
+		trace.StringAttribute("requestKey", fmt.Sprintf("%s", requestKey)),
 	)
 
+	log := log.WithFields(logrus.Fields{
+		"slot":        att.Data.Slot,
+		"subnet":      subnet,
+		"forkDigest":  forkDigest,
+		"request_key": requestKey,
+	})
+	log.Info("--------- broadcastAttestation START --------------")
+
 	if !hasPeer {
+		log.Info("--------------- INITIAL PEER NOT FOUND ----------------")
 		attestationBroadcastAttempts.Inc()
 		if err := func() error {
 			s.subnetLocker(subnet).Lock()
 			defer s.subnetLocker(subnet).Unlock()
 			ok, err := s.FindPeersWithSubnet(ctx, attestationToTopic(subnet, forkDigest), subnet, 1)
 			if err != nil {
+				log.WithError(err).Error("------- FAILED TO FIND PEERS WITH SUBNET ---------------")
 				return err
 			}
 			if ok {
+				log.WithField("subnet", subnet).Error("--------- PEER FOUND! ---------------")
 				savedAttestationBroadcasts.Inc()
 				return nil
 			}
+
+			log.WithField("subnet", subnet).Error("--------- SUBNET PEER NOT FOUND! ---------------")
 			return errors.New("failed to find peers for subnet")
 		}(); err != nil {
 			log.WithError(err).Error("Failed to find peers")
@@ -101,10 +119,20 @@ func (s *Service) broadcastAttestation(ctx context.Context, subnet uint64, att *
 		}
 	}
 
-	if err := s.broadcastObject(ctx, att, attestationToTopic(subnet, forkDigest)); err != nil {
-		log.WithError(err).Error("Failed to broadcast attestation")
+	attRaw, err := json.Marshal(att)
+	if err != nil {
+		log.WithError(err).Error("failed to marshal attestation")
+	}
+
+	log.WithFields(logrus.Fields{
+		"topic": attestationToTopic(subnet, forkDigest),
+		"att":   string(attRaw),
+	}).Info("---------- BROADCAST TOPIC --------------")
+	if err := s.broadcastObject(context.WithValue(ctx, "x-request-key", requestKey), att, attestationToTopic(subnet, forkDigest)); err != nil {
+		log.WithError(err).Error("------------ FAILED TO BROADCAST ATTESTATION --------------")
 		traceutil.AnnotateError(span, err)
 	}
+	log.Info("------------ BROADCASTED ATTESTATION!!! --------------")
 }
 
 // method to broadcast messages to other peers in our gossip mesh.

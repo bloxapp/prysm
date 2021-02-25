@@ -5,6 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	"google.golang.org/grpc/metadata"
+
+	"github.com/sirupsen/logrus"
+
 	ptypes "github.com/gogo/protobuf/types"
 	types "github.com/prysmaticlabs/eth2-types"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
@@ -149,6 +153,11 @@ func (vs *Server) ProposeAttestation(ctx context.Context, att *ethpb.Attestation
 	ctx, span := trace.StartSpan(ctx, "AttesterServer.ProposeAttestation")
 	defer span.End()
 
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.DataLoss, "failed to get metadata")
+	}
+
 	if _, err := bls.SignatureFromBytes(att.Signature); err != nil {
 		return nil, status.Error(codes.InvalidArgument, "Incorrect attestation signature")
 	}
@@ -175,8 +184,18 @@ func (vs *Server) ProposeAttestation(ctx context.Context, att *ethpb.Attestation
 	}
 	subnet := helpers.ComputeSubnetFromCommitteeAndSlot(uint64(len(vals)), att.Data.CommitteeIndex, att.Data.Slot)
 
+	log := log.WithFields(logrus.Fields{
+		"slot":         att.Data.Slot,
+		"subnet":       subnet,
+		"x-public-key": md["x-public-key"],
+		"request_key":  md["x-request-key"],
+	})
+
+	log.Info("------ProposeAttestation LOG START-------")
+
 	// Broadcast the new attestation to the network.
-	if err := vs.P2P.BroadcastAttestation(ctx, subnet, att); err != nil {
+	if err := vs.P2P.BroadcastAttestation(context.WithValue(ctx, "x-request-key", md["x-request-key"]), subnet, att); err != nil {
+		log.WithError(err).Error("Could not broadcast attestation")
 		return nil, status.Errorf(codes.Internal, "Could not broadcast attestation: %v", err)
 	}
 
@@ -198,6 +217,11 @@ func (vs *Server) ProposeAttestation(ctx context.Context, att *ethpb.Attestation
 func (vs *Server) SubscribeCommitteeSubnets(ctx context.Context, req *ethpb.CommitteeSubnetsSubscribeRequest) (*ptypes.Empty, error) {
 	ctx, span := trace.StartSpan(ctx, "AttesterServer.SubscribeCommitteeSubnets")
 	defer span.End()
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.DataLoss, "failed to get metadata")
+	}
 
 	if len(req.Slots) != len(req.CommitteeIds) || len(req.CommitteeIds) != len(req.IsAggregator) {
 		return nil, status.Error(codes.InvalidArgument, "request fields are not the same length")
@@ -233,6 +257,15 @@ func (vs *Server) SubscribeCommitteeSubnets(ctx context.Context, req *ethpb.Comm
 			currEpoch = helpers.SlotToEpoch(req.Slots[i])
 		}
 		subnet := helpers.ComputeSubnetFromCommitteeAndSlot(currValsLen, types.CommitteeIndex(req.CommitteeIds[i]), req.Slots[i])
+
+		log.WithFields(logrus.Fields{
+			"slot":         req.Slots[i],
+			"subnet":       subnet,
+			"x-public-key": md["x-public-key"],
+			"request_key":  md["x-request-key"],
+		}).Info("------SubscribeCommitteeSubnets LOG START-------")
+
+
 		cache.SubnetIDs.AddAttesterSubnetID(req.Slots[i], subnet)
 		if req.IsAggregator[i] {
 			cache.SubnetIDs.AddAggregatorSubnetID(req.Slots[i], subnet)

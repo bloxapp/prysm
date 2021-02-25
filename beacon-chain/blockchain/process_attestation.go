@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/pkg/errors"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
@@ -11,6 +12,7 @@ import (
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
 	"github.com/prysmaticlabs/prysm/shared/timeutils"
+	"github.com/sirupsen/logrus"
 	"go.opencensus.io/trace"
 )
 
@@ -47,6 +49,13 @@ func (s *Service) onAttestation(ctx context.Context, a *ethpb.Attestation) error
 		return err
 	}
 	tgt := stateTrie.CopyCheckpoint(a.Data.Target)
+
+	attRaw, err := json.Marshal(a)
+	if err != nil {
+		log.WithError(err).Error("failed to marshal attestation")
+	}
+
+	logrus.WithField("attRaw", string(attRaw)).Info("blockChain.onAttestation: got attestation object")
 
 	// Note that target root check is ignored here because it was performed in sync's validation pipeline:
 	// validate_aggregate_proof.go and validate_beacon_attestation.go

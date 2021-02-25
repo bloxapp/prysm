@@ -265,7 +265,6 @@ func (vs *Server) SubscribeCommitteeSubnets(ctx context.Context, req *ethpb.Comm
 			"request_key":  md["x-request-key"],
 		}).Info("------SubscribeCommitteeSubnets LOG START-------")
 
-
 		cache.SubnetIDs.AddAttesterSubnetID(req.Slots[i], subnet)
 		if req.IsAggregator[i] {
 			cache.SubnetIDs.AddAggregatorSubnetID(req.Slots[i], subnet)

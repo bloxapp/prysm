@@ -30,8 +30,10 @@ metadata:
 data:
   grpc-status.sh: |
     #!/bin/bash
-    export GRPC_STATUS=$(grpcurl -max-time 3 -plaintext -H "x-user: ricky" localhost:4000 list  |grep ethereum.beacon.rpc.v1.Health)
-    export GRPC_VAR1=ethereum.beacon.rpc.v1.Health
+    cd /root
+    export CURRENT_EPOCH=`echo "scale=0; ($(date -u +%s) - 1605700807)/60/6.4" | bc`
+    export GRPC_STATUS=$(grpcurl  -plaintext  -max-time 5 -proto http.proto -proto annotations.proto -proto validator.proto  -d "{\"epoch\": \"$CURRENT_EPOCH\",\"publicKeys\": [\"omAOWwfAil4hyUXxIBXzDMeyPu7kuiF3xqdcYKjsf1emF4fzYhIfoYoMMpxPyo6+\"]}" localhost:4000 ethereum.eth.v1alpha1.BeaconNodeValidator.GetDuties | jq -r '.currentEpochDuties[].status') 
+    export GRPC_VAR1=ACTIVE
 
     if [ $GRPC_STATUS = $GRPC_VAR1 ]
         then

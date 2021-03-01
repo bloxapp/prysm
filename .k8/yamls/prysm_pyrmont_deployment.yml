@@ -271,6 +271,15 @@ spec:
         - name: ethereum2-script-prysm-grpc
           mountPath: /root/grpc-status.sh
           subPath: grpc-status.sh
+        - name: ethereum2-grpc-proto-files
+          mountPath: /root/annotations.proto
+          subPath: annotations.proto
+        - name: ethereum2-grpc-proto-files
+          mountPath: /root/http.proto
+          subPath: http.proto
+        - name: ethereum2-grpc-proto-files
+          mountPath: /root/validator.proto
+          subPath: validator.proto            
         livenessProbe:
           exec:
             command:
@@ -283,7 +292,7 @@ spec:
             command:
             - /bin/bash
             - /root/sync-status.sh
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
           periodSeconds: 15
       volumes:
       - persistentVolumeClaim:
@@ -295,6 +304,9 @@ spec:
       - name: ethereum2-script-prysm-grpc
         configMap:
           name: ethereum2-script-prysm-grpc
+      - name: ethereum2-grpc-proto-files
+        configMap:
+          name: ethereum2-grpc-proto-files
       tolerations:
       - effect: NoSchedule
         key: kubernetes.io/role

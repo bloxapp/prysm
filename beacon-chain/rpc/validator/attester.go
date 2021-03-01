@@ -37,22 +37,37 @@ func (vs *Server) GetAttestationData(ctx context.Context, req *ethpb.Attestation
 		trace.Int64Attribute("committeeIndex", int64(req.CommitteeIndex)),
 	)
 
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.DataLoss, "failed to get metadata")
+	}
+
+	log := log.WithFields(logrus.Fields{
+		"slot":         int64(req.Slot),
+		"committeeIndex":       int64(req.CommitteeIndex),
+		"x-public-key": md["x-public-key"],
+		"request_key":  md["x-request-key"],
+	})
+
+	log.Info("------Blox-GetAttestationData LOG START-------")
 	if vs.SyncChecker.Syncing() {
 		return nil, status.Errorf(codes.Unavailable, "Syncing to latest head, not ready to respond")
 	}
-
+	log.Info("------Blox-GetAttestationData SYNCING-------")
 	if err := helpers.ValidateAttestationTime(req.Slot, vs.TimeFetcher.GenesisTime()); err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid request: %v", err))
 	}
-
+	log.Info("------Blox-GetAttestationData VALIDATE ATTESTATION TIME-------")
 	res, err := vs.AttestationCache.Get(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not retrieve data from attestation cache: %v", err)
 	}
 	if res != nil {
+		log.Info("------Blox-GetAttestationData CACHE FOUND-------")
 		res.CommitteeIndex = req.CommitteeIndex
 		return res, nil
 	}
+	log.Info("------Blox-GetAttestationData CACHE-------")
 
 	if err := vs.AttestationCache.MarkInProgress(req); err != nil {
 		if errors.Is(err, cache.ErrAlreadyInProgress) {
@@ -73,26 +88,32 @@ func (vs *Server) GetAttestationData(ctx context.Context, req *ethpb.Attestation
 			log.WithError(err).Error("Could not mark cache not in progress")
 		}
 	}()
+	log.Info("------Blox-GetAttestationData MARK IN PROGRESS-------")
 
 	headState, err := vs.HeadFetcher.HeadState(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not retrieve head state: %v", err)
 	}
+	log.Info("------Blox-GetAttestationData HEAD STATE-------")
 	headRoot, err := vs.HeadFetcher.HeadRoot(ctx)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not retrieve head root: %v", err)
 	}
+	log.Info("------Blox-GetAttestationData HEAD ROOT-------")
 
 	// In the case that we receive an attestation request after a newer state/block has been processed.
 	if headState.Slot() > req.Slot {
+		log.Info("------Blox-GetAttestationData NEWER STATE/BLOCK-------")
 		headRoot, err = helpers.BlockRootAtSlot(headState, req.Slot)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "Could not get historical head root: %v", err)
 		}
+		log.Info("------Blox-GetAttestationData BLOCK ROOT-------")
 		headState, err = vs.StateGen.StateByRoot(ctx, bytesutil.ToBytes32(headRoot))
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "Could not get historical head state: %v", err)
 		}
+		log.Info("------Blox-GetAttestationData STATE BY ROOT-------")
 	}
 	if headState == nil {
 		return nil, status.Error(codes.Internal, "Could not lookup parent state from head.")
@@ -104,16 +125,20 @@ func (vs *Server) GetAttestationData(ctx context.Context, req *ethpb.Attestation
 			if err != nil {
 				return nil, status.Errorf(codes.Internal, "Could not process slots up to %d: %v", req.Slot, err)
 			}
+			log.Info("------Blox-GetAttestationData PROCESS SLOT USING NEXT SLOT CACHE-------")
 		} else {
 			headState, err = state.ProcessSlots(ctx, headState, req.Slot)
 			if err != nil {
 				return nil, status.Errorf(codes.Internal, "Could not process slots up to %d: %v", req.Slot, err)
 			}
+			log.Info("------Blox-GetAttestationData PROCESS SLOTS-------")
 		}
 	}
 
 	targetEpoch := helpers.CurrentEpoch(headState)
+	log.Info("------Blox-GetAttestationData TARGET EPOCH-------")
 	epochStartSlot, err := helpers.StartSlot(targetEpoch)
+	log.Info("------Blox-GetAttestationData EPOCH START SLOT-------")
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +147,7 @@ func (vs *Server) GetAttestationData(ctx context.Context, req *ethpb.Attestation
 		targetRoot = headRoot
 	} else {
 		targetRoot, err = helpers.BlockRootAtSlot(headState, epochStartSlot)
+		log.Info("------Blox-GetAttestationData BLOCK ROOT TARGET-------")
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "Could not get target block for slot %d: %v", epochStartSlot, err)
 		}

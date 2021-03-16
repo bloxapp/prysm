@@ -10,7 +10,7 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/prysmaticlabs/eth2-types"
+	types "github.com/prysmaticlabs/eth2-types"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	validatorpb "github.com/prysmaticlabs/prysm/proto/validator/accounts/v2"
 	"github.com/prysmaticlabs/prysm/shared/bls"
@@ -93,6 +93,9 @@ func (m *mockKeymanager) Sign(ctx context.Context, req *validatorpb.SignRequest)
 }
 
 func (m *mockKeymanager) SubscribeAccountChanges(pubKeysChan chan [][48]byte) event.Subscription {
+	if m.accountsChangedFeed == nil {
+		m.accountsChangedFeed = &event.Feed{}
+	}
 	return m.accountsChangedFeed.Subscribe(pubKeysChan)
 }
 
@@ -362,7 +365,7 @@ func TestWaitMultipleActivation_LogsActivationEpochOK(t *testing.T) {
 		resp,
 		nil,
 	)
-	require.NoError(t, v.WaitForActivation(context.Background(), make(chan struct{})), "Could not wait for activation")
+	require.NoError(t, v.WaitForActivation(context.Background()), "Could not wait for activation")
 	require.LogsContain(t, hook, "Validator activated")
 }
 
@@ -400,7 +403,7 @@ func TestWaitActivation_NotAllValidatorsActivatedOK(t *testing.T) {
 		resp,
 		nil,
 	)
-	assert.NoError(t, v.WaitForActivation(context.Background(), make(chan struct{})), "Could not wait for activation")
+	assert.NoError(t, v.WaitForActivation(context.Background()), "Could not wait for activation")
 }
 
 func TestWaitSync_ContextCanceled(t *testing.T) {
@@ -473,7 +476,7 @@ func TestUpdateDuties_DoesNothingWhenNotEpochStart_AlreadyExistingAssignments(t 
 		duties: &ethpb.DutiesResponse{
 			Duties: []*ethpb.DutiesResponse_Duty{
 				{
-					Committee:      []uint64{},
+					Committee:      []types.ValidatorIndex{},
 					AttesterSlot:   10,
 					CommitteeIndex: 20,
 				},
@@ -546,7 +549,7 @@ func TestUpdateDuties_OK(t *testing.T) {
 				AttesterSlot:   params.BeaconConfig().SlotsPerEpoch,
 				ValidatorIndex: 200,
 				CommitteeIndex: 100,
-				Committee:      []uint64{0, 1, 2, 3},
+				Committee:      []types.ValidatorIndex{0, 1, 2, 3},
 				PublicKey:      []byte("testPubKey_1"),
 				ProposerSlots:  []types.Slot{params.BeaconConfig().SlotsPerEpoch + 1},
 			},
@@ -688,7 +691,7 @@ func TestRolesAt_DoesNotAssignProposer_Slot0(t *testing.T) {
 }
 
 func TestCheckAndLogValidatorStatus_OK(t *testing.T) {
-	nonexistentIndex := ^uint64(0)
+	nonexistentIndex := types.ValidatorIndex(^uint64(0))
 	type statusTest struct {
 		name   string
 		status *ethpb.ValidatorActivationResponse_Status

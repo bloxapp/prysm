@@ -22,12 +22,12 @@ import (
 	statefeed "github.com/prysmaticlabs/prysm/beacon-chain/core/feed/state"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/helpers"
 	"github.com/prysmaticlabs/prysm/beacon-chain/db"
-	"github.com/prysmaticlabs/prysm/beacon-chain/flags"
 	"github.com/prysmaticlabs/prysm/beacon-chain/operations/attestations"
 	"github.com/prysmaticlabs/prysm/beacon-chain/operations/slashings"
 	"github.com/prysmaticlabs/prysm/beacon-chain/operations/voluntaryexits"
 	"github.com/prysmaticlabs/prysm/beacon-chain/p2p"
 	"github.com/prysmaticlabs/prysm/beacon-chain/state/stategen"
+	"github.com/prysmaticlabs/prysm/cmd/beacon-chain/flags"
 	"github.com/prysmaticlabs/prysm/shared"
 	"github.com/prysmaticlabs/prysm/shared/abool"
 	"github.com/prysmaticlabs/prysm/shared/params"
@@ -53,8 +53,8 @@ type Config struct {
 	P2P                 p2p.P2P
 	DB                  db.NoHeadAccessDatabase
 	AttPool             attestations.Pool
-	ExitPool            *voluntaryexits.Pool
-	SlashingPool        *slashings.Pool
+	ExitPool            voluntaryexits.PoolManager
+	SlashingPool        slashings.PoolManager
 	Chain               blockchainService
 	InitialSync         Checker
 	StateNotifier       statefeed.Notifier
@@ -83,8 +83,8 @@ type Service struct {
 	p2p                       p2p.P2P
 	db                        db.NoHeadAccessDatabase
 	attPool                   attestations.Pool
-	exitPool                  *voluntaryexits.Pool
-	slashingPool              *slashings.Pool
+	exitPool                  voluntaryexits.PoolManager
+	slashingPool              slashings.PoolManager
 	chain                     blockchainService
 	slotToPendingBlocks       *gcache.Cache
 	seenPendingBlocks         map[[32]byte]bool

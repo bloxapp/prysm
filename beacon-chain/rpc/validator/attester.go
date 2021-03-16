@@ -37,14 +37,24 @@ func (vs *Server) GetAttestationData(ctx context.Context, req *ethpb.Attestation
 		trace.Int64Attribute("committeeIndex", int64(req.CommitteeIndex)),
 	)
 
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.DataLoss, "failed to get metadata")
+	}
+
+	log := log.WithFields(logrus.Fields{
+		"slot":         int64(req.Slot),
+		"committeeIndex":       int64(req.CommitteeIndex),
+		"x-public-key": md["x-public-key"],
+		"request_key":  md["x-request-key"],
+	})
+
 	if vs.SyncChecker.Syncing() {
 		return nil, status.Errorf(codes.Unavailable, "Syncing to latest head, not ready to respond")
 	}
-
 	if err := helpers.ValidateAttestationTime(req.Slot, vs.TimeFetcher.GenesisTime()); err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid request: %v", err))
 	}
-
 	res, err := vs.AttestationCache.Get(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not retrieve data from attestation cache: %v", err)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	types "github.com/prysmaticlabs/eth2-types"
 	ethpb "github.com/prysmaticlabs/ethereumapis/eth/v1alpha1"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/helpers"
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
@@ -98,14 +99,14 @@ func ProcessAttestationsNoVerifySignature(
 	return beaconState, nil
 }
 
-// ProcessAttestationNoVerifySignature processes the attestation without verifying the attestation signature. This
-// method is used to validate attestations whose signatures have already been verified.
-func ProcessAttestationNoVerifySignature(
+// VerifyAttestationNoVerifySignature verifies the attestation without verifying the attestation signature. This is
+// used before processing attestation with the beacon state.
+func VerifyAttestationNoVerifySignature(
 	ctx context.Context,
 	beaconState *stateTrie.BeaconState,
 	att *ethpb.Attestation,
 ) (*stateTrie.BeaconState, error) {
-	ctx, span := trace.StartSpan(ctx, "core.ProcessAttestationNoVerifySignature")
+	ctx, span := trace.StartSpan(ctx, "core.VerifyAttestationNoVerifySignature")
 	defer span.End()
 
 	if err := helpers.ValidateNilAttestation(att); err != nil {
@@ -158,6 +159,36 @@ func ProcessAttestationNoVerifySignature(
 		return nil, errors.Wrap(err, "could not verify attestation bitfields")
 	}
 
+	// Verify attesting indices are correct.
+	committee, err := helpers.BeaconCommitteeFromState(beaconState, att.Data.Slot, att.Data.CommitteeIndex)
+	if err != nil {
+		return nil, err
+	}
+	indexedAtt, err := attestationutil.ConvertToIndexed(ctx, att, committee)
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, attestationutil.IsValidAttestationIndices(ctx, indexedAtt)
+}
+
+// ProcessAttestationNoVerifySignature processes the attestation without verifying the attestation signature. This
+// method is used to validate attestations whose signatures have already been verified.
+func ProcessAttestationNoVerifySignature(
+	ctx context.Context,
+	beaconState *stateTrie.BeaconState,
+	att *ethpb.Attestation,
+) (*stateTrie.BeaconState, error) {
+	ctx, span := trace.StartSpan(ctx, "core.ProcessAttestationNoVerifySignature")
+	defer span.End()
+
+	if _, err := VerifyAttestationNoVerifySignature(ctx, beaconState, att); err != nil {
+		return nil, err
+	}
+
+	currEpoch := helpers.CurrentEpoch(beaconState)
+	data := att.Data
+	s := att.Data.Slot
 	proposerIndex, err := helpers.BeaconProposerIndex(beaconState)
 	if err != nil {
 		return nil, err
@@ -183,19 +214,6 @@ func ProcessAttestationNoVerifySignature(
 		if err := beaconState.AppendPreviousEpochAttestations(pendingAtt); err != nil {
 			return nil, err
 		}
-	}
-
-	// Verify attesting indices are correct.
-	committee, err := helpers.BeaconCommitteeFromState(beaconState, att.Data.Slot, att.Data.CommitteeIndex)
-	if err != nil {
-		return nil, err
-	}
-	indexedAtt, err := attestationutil.ConvertToIndexed(ctx, att, committee)
-	if err != nil {
-		return nil, err
-	}
-	if err := attestationutil.IsValidAttestationIndices(ctx, indexedAtt); err != nil {
-		return nil, err
 	}
 
 	return beaconState, nil
@@ -248,7 +266,7 @@ func VerifyIndexedAttestation(ctx context.Context, beaconState *stateTrie.Beacon
 	indices := indexedAtt.AttestingIndices
 	var pubkeys []bls.PublicKey
 	for i := 0; i < len(indices); i++ {
-		pubkeyAtIdx := beaconState.PubkeyAtIndex(indices[i])
+		pubkeyAtIdx := beaconState.PubkeyAtIndex(types.ValidatorIndex(indices[i]))
 		pk, err := bls.PublicKeyFromBytes(pubkeyAtIdx[:])
 		if err != nil {
 			return errors.Wrap(err, "could not deserialize validator public key")

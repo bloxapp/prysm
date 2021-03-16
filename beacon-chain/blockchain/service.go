@@ -21,7 +21,6 @@ import (
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/helpers"
 	"github.com/prysmaticlabs/prysm/beacon-chain/core/state"
 	"github.com/prysmaticlabs/prysm/beacon-chain/db"
-	"github.com/prysmaticlabs/prysm/beacon-chain/flags"
 	f "github.com/prysmaticlabs/prysm/beacon-chain/forkchoice"
 	"github.com/prysmaticlabs/prysm/beacon-chain/forkchoice/protoarray"
 	"github.com/prysmaticlabs/prysm/beacon-chain/operations/attestations"
@@ -31,6 +30,7 @@ import (
 	"github.com/prysmaticlabs/prysm/beacon-chain/powchain"
 	stateTrie "github.com/prysmaticlabs/prysm/beacon-chain/state"
 	"github.com/prysmaticlabs/prysm/beacon-chain/state/stategen"
+	"github.com/prysmaticlabs/prysm/cmd/beacon-chain/flags"
 	pb "github.com/prysmaticlabs/prysm/proto/beacon/p2p/v1"
 	"github.com/prysmaticlabs/prysm/shared/bytesutil"
 	"github.com/prysmaticlabs/prysm/shared/params"
@@ -52,8 +52,8 @@ type Service struct {
 	depositCache          *depositcache.DepositCache
 	chainStartFetcher     powchain.ChainStartFetcher
 	attPool               attestations.Pool
-	slashingPool          *slashings.Pool
-	exitPool              *voluntaryexits.Pool
+	slashingPool          slashings.PoolManager
+	exitPool              voluntaryexits.PoolManager
 	genesisTime           time.Time
 	p2p                   p2p.Broadcaster
 	maxRoutines           int
@@ -88,8 +88,8 @@ type Config struct {
 	BeaconDB          db.HeadAccessDatabase
 	DepositCache      *depositcache.DepositCache
 	AttPool           attestations.Pool
-	ExitPool          *voluntaryexits.Pool
-	SlashingPool      *slashings.Pool
+	ExitPool          voluntaryexits.PoolManager
+	SlashingPool      slashings.PoolManager
 	P2p               p2p.Broadcaster
 	MaxRoutines       int
 	StateNotifier     statefeed.Notifier

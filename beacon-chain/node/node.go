@@ -22,7 +22,6 @@ import (
 	"github.com/prysmaticlabs/prysm/beacon-chain/cache/depositcache"
 	"github.com/prysmaticlabs/prysm/beacon-chain/db"
 	"github.com/prysmaticlabs/prysm/beacon-chain/db/kv"
-	"github.com/prysmaticlabs/prysm/beacon-chain/flags"
 	"github.com/prysmaticlabs/prysm/beacon-chain/forkchoice"
 	"github.com/prysmaticlabs/prysm/beacon-chain/forkchoice/protoarray"
 	"github.com/prysmaticlabs/prysm/beacon-chain/gateway"
@@ -36,6 +35,7 @@ import (
 	"github.com/prysmaticlabs/prysm/beacon-chain/state/stategen"
 	regularsync "github.com/prysmaticlabs/prysm/beacon-chain/sync"
 	initialsync "github.com/prysmaticlabs/prysm/beacon-chain/sync/initial-sync"
+	"github.com/prysmaticlabs/prysm/cmd/beacon-chain/flags"
 	"github.com/prysmaticlabs/prysm/shared"
 	"github.com/prysmaticlabs/prysm/shared/backuputil"
 	"github.com/prysmaticlabs/prysm/shared/cmd"
@@ -67,8 +67,8 @@ type BeaconNode struct {
 	stop            chan struct{} // Channel to wait for termination notifications.
 	db              db.Database
 	attestationPool attestations.Pool
-	exitPool        *voluntaryexits.Pool
-	slashingsPool   *slashings.Pool
+	exitPool        voluntaryexits.PoolManager
+	slashingsPool   slashings.PoolManager
 	depositCache    *depositcache.DepositCache
 	stateFeed       *event.Feed
 	blockFeed       *event.Feed
